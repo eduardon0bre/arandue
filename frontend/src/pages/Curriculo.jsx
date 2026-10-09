@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import FormInput from '../components/FormInput';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
+import FeedbacksList from '../components/FeedbacksList';
 import api from '../services/api';
 
 const SERVICOS_SUGERIDOS = [
@@ -39,6 +40,22 @@ export default function Curriculo() {
   const [salvando, setSalvando] = useState(false);
   const [mensagemSucesso, setMensagemSucesso] = useState(null);
   const [mensagemErro, setMensagemErro] = useState(null);
+  const [mediaReputacao, setMediaReputacao] = useState(null);
+
+  useEffect(() => {
+    async function carregarMedia() {
+      if (!usuarioAtual?.id) return;
+      try {
+        const res = await api.get(`/avaliacoes/usuario/${usuarioAtual.id}/media`);
+        if (res.data?.success && res.data.data) {
+          setMediaReputacao(res.data.data);
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    carregarMedia();
+  }, [usuarioAtual?.id]);
 
   useEffect(() => {
     let montado = true;
@@ -361,20 +378,36 @@ export default function Curriculo() {
             Reputação na Plataforma
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div style={{ padding: '1rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
               <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>100%</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Pontualidade e presença</div>
             </div>
             <div style={{ padding: '1rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>5.0 ★</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Média geral de avaliações</div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>
+                {mediaReputacao && mediaReputacao.total_avaliacoes > 0
+                  ? `${Number(mediaReputacao.nota_media).toFixed(1)} ★`
+                  : usuarioAtual?.nota_media
+                    ? `${Number(usuarioAtual.nota_media).toFixed(1)} ★`
+                    : '5.0 ★'}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                {mediaReputacao?.total_avaliacoes
+                  ? `${mediaReputacao.total_avaliacoes} ${mediaReputacao.total_avaliacoes === 1 ? 'avaliação' : 'avaliações'}`
+                  : 'Média geral de avaliações'}
+              </div>
             </div>
             <div style={{ padding: '1rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
               <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>0</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Cancelamentos reportados</div>
             </div>
           </div>
+
+          <FeedbacksList
+            usuarioId={usuarioAtual?.id}
+            titulo="Feedbacks e Avaliações de Contratantes"
+            tipoPapel="diarista"
+          />
         </div>
 
         {(temAlteracao || salvando) && (

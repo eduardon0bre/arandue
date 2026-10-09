@@ -12,6 +12,7 @@ router.get('/:id', demandaController.buscarPorId);
 // Criação e gestão de demandas/vagas
 router.post('/', authMiddleware, demandaController.criar);
 router.put('/:id', authMiddleware, demandaController.atualizar);
+router.patch('/:id/concluir', authMiddleware, demandaController.concluir);
 router.delete('/:id', authMiddleware, demandaController.excluir);
 
 // Sub-recursos de candidatos e candidaturas

@@ -96,7 +96,27 @@ export default function Card({
           {contratante_nome && (
             <div className="card-meta-item">
               <Building size={15} color="var(--text-muted)" />
-              <span>Contratante: <strong>{contratante_nome}</strong></span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                <span>Contratante: <strong>{contratante_nome}</strong></span>
+                {demanda.contratante_nota_media ? (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.2rem',
+                      color: '#b45309',
+                      backgroundColor: '#fef3c7',
+                      border: '1px solid #fde68a',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '0.1rem 0.45rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 700
+                    }}
+                  >
+                    ★ {Number(demanda.contratante_nota_media).toFixed(1)}
+                  </span>
+                ) : null}
+              </span>
             </div>
           )}
 

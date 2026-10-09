@@ -263,6 +263,62 @@ const demandaController = {
         message: 'Erro interno ao excluir demanda.'
       });
     }
+  },
+
+  async concluir(req, res) {
+    try {
+      const { id } = req.params;
+      const usuarioId = req.usuario ? req.usuario.id : req.body.usuario_id;
+
+      if (!id || isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Identificador de demanda inválido.'
+        });
+      }
+
+      const demandaExistente = await demandaModel.findById(id);
+      if (!demandaExistente) {
+        return res.status(404).json({
+          success: false,
+          message: 'Demanda não encontrada.'
+        });
+      }
+
+      // Validação de permissão: apenas o contratante dono ou o diarista aceito podem concluir
+      if (usuarioId) {
+        const isDono = Number(demandaExistente.contratante_id) === Number(usuarioId);
+        let isDiaristaAceito = false;
+        if (!isDono) {
+          const candidatos = await candidaturaModel.findByDemandaId(id);
+          isDiaristaAceito = candidatos.some(
+            (c) => Number(c.diarista_id) === Number(usuarioId) && c.status === 'aceita'
+          );
+        }
+
+        if (!isDono && !isDiaristaAceito) {
+          return res.status(403).json({
+            success: false,
+            message: 'Apenas o anunciante da vaga ou o diarista contratado podem marcar a diária como concluída.'
+          });
+        }
+      }
+
+      await demandaModel.update(id, { status: 'concluida' });
+      const demandaAtualizada = await demandaModel.findById(id);
+
+      return res.status(200).json({
+        success: true,
+        data: demandaAtualizada,
+        message: 'Trabalho marcado como concluído com sucesso!'
+      });
+    } catch (error) {
+      console.error('Erro ao concluir demanda:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno ao marcar demanda como concluída.'
+      });
+    }
   }
 };
 

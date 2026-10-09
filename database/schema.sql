@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS avaliacoes (
   comentario TEXT NULL,
   data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT chk_avaliacoes_nota CHECK (nota BETWEEN 1 AND 5),
+  CONSTRAINT uq_avaliacao_demanda_avaliador UNIQUE (demanda_id, avaliador_id),
   CONSTRAINT fk_avaliacoes_demanda
     FOREIGN KEY (demanda_id) REFERENCES demandas(id)
     ON DELETE CASCADE

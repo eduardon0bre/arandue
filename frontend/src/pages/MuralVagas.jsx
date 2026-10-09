@@ -8,6 +8,7 @@ import FormSelect from '../components/FormSelect';
 import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
+import FeedbacksList from '../components/FeedbacksList';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 
@@ -38,7 +39,6 @@ export default function MuralVagas() {
   // Modais
   const [demandaDetalhes, setDemandaDetalhes] = useState(null);
   const [demandaParaCandidatar, setDemandaParaCandidatar] = useState(null);
-  const [mensagemCandidatura, setMensagemCandidatura] = useState('');
   const [enviandoCandidatura, setEnviandoCandidatura] = useState(false);
   const [candidaturasRealizadas, setCandidaturasRealizadas] = useState([]);
   const [modalBloqueioCriacaoAberta, setModalBloqueioCriacaoAberta] = useState(false);
@@ -148,14 +148,13 @@ export default function MuralVagas() {
       setEnviandoCandidatura(true);
       const payload = {
         demanda_id: demandaParaCandidatar.id,
-        diarista_id: usuarioAtual.id,
-        mensagem: mensagemCandidatura
+        diarista_id: usuarioAtual.id
       };
 
       await api.post('/candidaturas', payload);
 
       setCandidaturasRealizadas((prev) => [...prev, Number(demandaParaCandidatar.id)]);
-      setMensagemSucesso(`Inscrição confirmada com sucesso para a vaga: "${demandaParaCandidatar.titulo}"!`);
+      setMensagemSucesso(`Candidatura enviada para a vaga: "${demandaParaCandidatar.titulo}".`);
       setDemandaParaCandidatar(null);
 
       // Atualiza contador na demanda localmente sem recarregar página
@@ -414,6 +413,17 @@ export default function MuralVagas() {
               <div><strong>Candidatos inscritos:</strong> {demandaDetalhes.total_candidatos || 0}</div>
             </div>
 
+            {/* Avaliações e Feedbacks do Contratante */}
+            {demandaDetalhes.contratante_id && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <FeedbacksList
+                  usuarioId={demandaDetalhes.contratante_id}
+                  titulo={`Avaliações de ${demandaDetalhes.contratante_nome || 'Contratante'}`}
+                  tipoPapel="contratante"
+                />
+              </div>
+            )}
+
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               * Os dados de contato direto (WhatsApp e telefone) são liberados para o trabalhador logo após a aprovação da candidatura pelo contratante.
             </p>
@@ -463,15 +473,6 @@ export default function MuralVagas() {
               <br />
               <strong>Local:</strong> {demandaParaCandidatar.bairro}
             </div>
-
-            <FormInput
-              type="textarea"
-              label="Mensagem de apresentação para o contratante"
-              rows={4}
-              value={mensagemCandidatura}
-              onChange={(e) => setMensagemCandidatura(e.target.value)}
-              helperText="Descreva brevemente sua experiência relevante ou disponibilidade."
-            />
           </div>
         </Modal>
       )}
