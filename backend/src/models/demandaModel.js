@@ -16,7 +16,11 @@ const demandaModel = {
         d.data_criacao,
         u.nome AS contratante_nome,
         u.telefone AS contratante_telefone,
-        (SELECT COUNT(*) FROM candidaturas c WHERE c.demanda_id = d.id) AS total_candidatos
+        (SELECT ROUND(AVG(nota), 1) FROM avaliacoes WHERE avaliado_id = d.contratante_id) AS contratante_nota_media,
+        (SELECT COUNT(*) FROM avaliacoes WHERE avaliado_id = d.contratante_id) AS contratante_total_avaliacoes,
+        (SELECT COUNT(*) FROM candidaturas c WHERE c.demanda_id = d.id) AS total_candidatos,
+        (SELECT c.diarista_id FROM candidaturas c WHERE c.demanda_id = d.id AND c.status = 'aceita' LIMIT 1) AS diarista_aceito_id,
+        (SELECT u_d.nome FROM candidaturas c JOIN usuarios u_d ON c.diarista_id = u_d.id WHERE c.demanda_id = d.id AND c.status = 'aceita' LIMIT 1) AS diarista_aceito_nome
       FROM demandas d
       INNER JOIN usuarios u ON d.contratante_id = u.id
       WHERE 1=1
@@ -68,7 +72,10 @@ const demandaModel = {
         u.telefone AS contratante_telefone,
         u.bairro AS contratante_bairro,
         (SELECT COUNT(*) FROM candidaturas c WHERE c.demanda_id = d.id) AS total_candidatos,
-        (SELECT ROUND(AVG(nota), 1) FROM avaliacoes WHERE avaliado_id = u.id) AS contratante_nota_media
+        (SELECT c.diarista_id FROM candidaturas c WHERE c.demanda_id = d.id AND c.status = 'aceita' LIMIT 1) AS diarista_aceito_id,
+        (SELECT u_d.nome FROM candidaturas c JOIN usuarios u_d ON c.diarista_id = u_d.id WHERE c.demanda_id = d.id AND c.status = 'aceita' LIMIT 1) AS diarista_aceito_nome,
+        (SELECT ROUND(AVG(nota), 1) FROM avaliacoes WHERE avaliado_id = u.id) AS contratante_nota_media,
+        (SELECT COUNT(*) FROM avaliacoes WHERE avaliado_id = u.id) AS contratante_total_avaliacoes
       FROM demandas d
       INNER JOIN usuarios u ON d.contratante_id = u.id
       WHERE d.id = ?

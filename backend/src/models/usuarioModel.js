@@ -3,14 +3,24 @@ const db = require('../config/db');
 const usuarioModel = {
   async findAll() {
     const [rows] = await db.query(
-      'SELECT id, nome, email, telefone, tipo, bairro, data_criacao FROM usuarios ORDER BY nome ASC'
+      `SELECT 
+        u.id, u.nome, u.email, u.telefone, u.tipo, u.bairro, u.data_criacao,
+        (SELECT ROUND(AVG(nota), 1) FROM avaliacoes WHERE avaliado_id = u.id) AS nota_media,
+        (SELECT COUNT(*) FROM avaliacoes WHERE avaliado_id = u.id) AS total_avaliacoes
+       FROM usuarios u 
+       ORDER BY u.nome ASC`
     );
     return rows;
   },
 
   async findById(id) {
     const [rows] = await db.query(
-      'SELECT id, nome, email, telefone, tipo, bairro, data_criacao FROM usuarios WHERE id = ?',
+      `SELECT 
+        u.id, u.nome, u.email, u.telefone, u.tipo, u.bairro, u.data_criacao,
+        (SELECT ROUND(AVG(nota), 1) FROM avaliacoes WHERE avaliado_id = u.id) AS nota_media,
+        (SELECT COUNT(*) FROM avaliacoes WHERE avaliado_id = u.id) AS total_avaliacoes
+       FROM usuarios u 
+       WHERE u.id = ?`,
       [id]
     );
     return rows[0] || null;
@@ -18,7 +28,13 @@ const usuarioModel = {
 
   async findByTipo(tipo) {
     const [rows] = await db.query(
-      'SELECT id, nome, email, telefone, tipo, bairro, data_criacao FROM usuarios WHERE tipo = ? ORDER BY nome ASC',
+      `SELECT 
+        u.id, u.nome, u.email, u.telefone, u.tipo, u.bairro, u.data_criacao,
+        (SELECT ROUND(AVG(nota), 1) FROM avaliacoes WHERE avaliado_id = u.id) AS nota_media,
+        (SELECT COUNT(*) FROM avaliacoes WHERE avaliado_id = u.id) AS total_avaliacoes
+       FROM usuarios u 
+       WHERE u.tipo = ? 
+       ORDER BY u.nome ASC`,
       [tipo]
     );
     return rows;

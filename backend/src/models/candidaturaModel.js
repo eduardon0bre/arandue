@@ -48,6 +48,7 @@ const candidaturaModel = {
         u.telefone AS diarista_telefone,
         u.bairro AS diarista_bairro,
         (SELECT ROUND(AVG(nota), 1) FROM avaliacoes WHERE avaliado_id = u.id) AS diarista_nota_media,
+        (SELECT COUNT(*) FROM avaliacoes WHERE avaliado_id = u.id) AS diarista_total_avaliacoes,
         (SELECT COUNT(*) FROM candidaturas c2 WHERE c2.diarista_id = u.id AND c2.status = 'aceita') AS total_bicos_concluidos,
         cur.foto_url AS diarista_foto_url,
         cur.bio AS diarista_bio,
@@ -80,6 +81,7 @@ const candidaturaModel = {
         d.data_servico AS demanda_data_servico,
         d.bairro AS demanda_bairro,
         d.status AS demanda_status,
+        d.contratante_id AS contratante_id,
         u.nome AS contratante_nome,
         u.telefone AS contratante_telefone
       FROM candidaturas c

@@ -38,11 +38,23 @@ export interface MockCandidatura {
   data_criacao: string;
 }
 
+export interface MockAvaliacao {
+  id: number;
+  demanda_id: number;
+  avaliador_id: number;
+  avaliado_id: number;
+  nota: number;
+  comentario: string | null;
+  data_criacao: string;
+}
+
 let users: MockUser[] = [];
 let demandas: MockDemanda[] = [];
 let candidaturas: MockCandidatura[] = [];
+let avaliacoes: MockAvaliacao[] = [];
 let autoIncDemanda = 100;
 let autoIncCandidatura = 500;
+let autoIncAvaliacao = 300;
 
 export const INITIAL_USERS: MockUser[] = [
   {
@@ -109,8 +121,10 @@ export function resetMockDb(): void {
   users = JSON.parse(JSON.stringify(INITIAL_USERS));
   demandas = JSON.parse(JSON.stringify(INITIAL_DEMANDAS));
   candidaturas = [];
+  avaliacoes = [];
   autoIncDemanda = 100;
   autoIncCandidatura = 500;
+  autoIncAvaliacao = 300;
 }
 
 export function getMockUsers(): MockUser[] {
@@ -123,6 +137,10 @@ export function getMockDemandas(): MockDemanda[] {
 
 export function getMockCandidaturas(): MockCandidatura[] {
   return candidaturas;
+}
+
+export function getMockAvaliacoes(): MockAvaliacao[] {
+  return avaliacoes;
 }
 
 /**
@@ -318,7 +336,41 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
 
   // 14. SELECT avaliacoes WHERE avaliado_id = ?
   if (norm.includes('FROM AVALIACOES') && norm.includes('AVALIADO_ID = ?')) {
-    return [[{ nota_media: 5.0, total_avaliacoes: 2 }], {}];
+    if (norm.includes('AVG(NOTA)') || norm.includes('NOTA_MEDIA') || norm.includes('ESTRELAS_5') || norm.includes('COUNT(*)')) {
+      const avaliadoId = Number(params[0]);
+      const userAvals = avaliacoes.filter((a) => a.avaliado_id === avaliadoId);
+      const total = userAvals.length;
+      const media = total > 0 ? Number((userAvals.reduce((s, a) => s + a.nota, 0) / total).toFixed(1)) : (norm.includes('ESTRELAS_5') ? 0.0 : 5.0);
+      const e5 = userAvals.filter((a) => a.nota === 5).length;
+      const e4 = userAvals.filter((a) => a.nota === 4).length;
+      const e3 = userAvals.filter((a) => a.nota === 3).length;
+      const e2 = userAvals.filter((a) => a.nota === 2).length;
+      const e1 = userAvals.filter((a) => a.nota === 1).length;
+      return [[{
+        nota_media: media,
+        total_avaliacoes: total,
+        estrelas_5: e5,
+        estrelas_4: e4,
+        estrelas_3: e3,
+        estrelas_2: e2,
+        estrelas_1: e1
+      }], {}];
+    }
+    const avaliadoId = Number(params[0]);
+    const list = avaliacoes.filter((a) => a.avaliado_id === avaliadoId).map((a) => {
+      const uAvaliador = users.find((u) => u.id === a.avaliador_id);
+      const d = demandas.find((dem) => dem.id === a.demanda_id);
+      return {
+        id: a.id,
+        demanda_id: a.demanda_id,
+        nota: a.nota,
+        comentario: a.comentario,
+        avaliador_nome: uAvaliador?.tipo === 'contratante' ? 'Contratante verificado' : uAvaliador?.tipo === 'diarista' ? 'Diarista verificado' : 'Usuário da plataforma',
+        avaliador_tipo: uAvaliador?.tipo || 'usuario',
+        demanda_titulo: d?.titulo || 'Demanda'
+      };
+    });
+    return [list, {}];
   }
 
   // 15. SELECT candidaturas findByDiaristaId
@@ -343,6 +395,78 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
         demanda_status: d?.status || 'aberta',
         contratante_nome: u?.nome || 'Contratante',
         contratante_telefone: u?.telefone || '11988887777'
+      };
+    });
+    return [list, {}];
+  }
+
+  // 16. UPDATE demandas
+  if (norm.startsWith('UPDATE DEMANDAS')) {
+    const id = Number(params[params.length - 1]);
+    const d = demandas.find((item) => item.id === id);
+    if (d) {
+      if (norm.includes("STATUS = 'CONCLUIDA'") || norm.includes("STATUS = ?") || norm.includes("STATUS = COALESCE(?, STATUS)")) {
+        const statusParam = params.find((p) => typeof p === 'string' && ['aberta', 'preenchida', 'concluida', 'cancelada'].includes(p));
+        if (norm.includes("STATUS = 'CONCLUIDA'")) {
+          d.status = 'concluida';
+        } else if (statusParam) {
+          d.status = statusParam;
+        }
+      }
+      return [{ affectedRows: 1 }, {}];
+    }
+    return [{ affectedRows: 0 }, {}];
+  }
+
+  // 17. INSERT INTO avaliacoes
+  if (norm.startsWith('INSERT INTO AVALIACOES')) {
+    const [demanda_id, avaliador_id, avaliado_id, nota, comentario] = params;
+    const newId = ++autoIncAvaliacao;
+    const novaAvaliacao: MockAvaliacao = {
+      id: newId,
+      demanda_id: Number(demanda_id),
+      avaliador_id: Number(avaliador_id),
+      avaliado_id: Number(avaliado_id),
+      nota: Number(nota),
+      comentario: comentario ? String(comentario) : null,
+      data_criacao: new Date().toISOString()
+    };
+    avaliacoes.push(novaAvaliacao);
+    return [{ insertId: newId, affectedRows: 1 }, {}];
+  }
+
+  // 18. SELECT FROM avaliacoes WHERE demanda_id = ? AND avaliador_id = ?
+  if (norm.includes('FROM AVALIACOES') && norm.includes('DEMANDA_ID = ?') && norm.includes('AVALIADOR_ID = ?')) {
+    const [demanda_id, avaliador_id] = params.map(Number);
+    const found = avaliacoes.find((a) => a.demanda_id === demanda_id && a.avaliador_id === avaliador_id);
+    return [found ? [found] : [], {}];
+  }
+
+  // 19. SELECT FROM avaliacoes WHERE demanda_id = ?
+  if (norm.includes('FROM AVALIACOES') && norm.includes('DEMANDA_ID = ?') && !norm.includes('AVALIADOR_ID = ?')) {
+    const demandaId = Number(params[0]);
+    const list = avaliacoes.filter((a) => a.demanda_id === demandaId).map((a) => {
+      const uAvaliador = users.find((u) => u.id === a.avaliador_id);
+      const uAvaliado = users.find((u) => u.id === a.avaliado_id);
+      return {
+        ...a,
+        avaliador_nome: uAvaliador?.nome || 'Usuário',
+        avaliado_nome: uAvaliado?.nome || 'Usuário'
+      };
+    });
+    return [list, {}];
+  }
+
+  // 20. SELECT FROM avaliacoes WHERE avaliador_id = ?
+  if (norm.includes('FROM AVALIACOES') && norm.includes('AVALIADOR_ID = ?') && !norm.includes('DEMANDA_ID = ?')) {
+    const avaliadorId = Number(params[0]);
+    const list = avaliacoes.filter((a) => a.avaliador_id === avaliadorId).map((a) => {
+      const d = demandas.find((dem) => dem.id === a.demanda_id);
+      const uAvaliado = users.find((u) => u.id === a.avaliado_id);
+      return {
+        ...a,
+        avaliado_nome: uAvaliado?.nome || 'Usuário',
+        demanda_titulo: d?.titulo || 'Demanda'
       };
     });
     return [list, {}];
