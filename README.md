@@ -6,6 +6,31 @@ O projeto é alinhado ao **Objetivo de Desenvolvimento Sustentável 8 da ONU (Tr
 
 ---
 
+## 🎯 Contexto e Apresentação do Projeto
+
+### 💡 Problema
+A contratação de serviços temporários e operacionais ("bicos" e diárias como garçom, auxiliar de carga, ajudante ou pintor) ainda ocorre predominantemente por grupos informais de mensagens ou boca a boca, gerando vulnerabilidades graves:
+* **Falta de transparência:** O trabalhador aceita turnos sem clareza sobre jornada exata, condições operacionais ou valor líquido acordado ("a combinar"), ficando sujeito a calotes e remunerações predatórias.
+* **Intermediações abusivas:** Plataformas tradicionais cobram comissões pesadas de quem já se encontra em situação de vulnerabilidade financeira.
+* **Insegurança mútua:** Contratantes têm dificuldade para encontrar profissionais confiáveis com histórico transparente; diaristas enfrentam exposição indevida de dados e cancelamentos de última hora sem amparo.
+
+### 🌎 ODS Alinhada (ODS 8 — Trabalho Decente e Crescimento Econômico)
+O Aranduê atua diretamente nas metas da **ODS 8 da ONU**, promovendo o trabalho produtivo e protegido:
+* **Transparência Tarifária Obrigatória (Meta 8.5):** Proibição total de vagas "a combinar". Todo anúncio exige valor monetário líquido visível e acordado previamente.
+* **Jornadas e Condições Claras (Meta 8.8):** Delimitação expressa de horários de início/fim, vestimenta e ferramentas exigidas, evitando sobrecarga ou exigências abusivas.
+* **Eliminação de Taxas Predatórias:** Conexão direta entre empregador local e prestador de serviço, assegurando que o trabalhador receba 100% da sua diária.
+* **Proteção e Maioridade:** Salvaguarda estrita com exigência de maioridade civil (+18 anos), prevenindo o trabalho infantojuvenil irregular.
+
+### 👥 Público-alvo
+* **Trabalhadores Autônomos e Diaristas (+18):** Profissionais operacionais que buscam flexibilidade e renda imediata com segurança, respeito e previsibilidade.
+* **Empregadores e Pequenos Negócios Locais:** Bares, restaurantes, lojas, organizadores de eventos e pequenas empresas que precisam de reforço de equipe ágil para picos de demanda ou emergências pontuais.
+
+### ❤️ Impacto
+* **Impacto Social:** Resgate da dignidade e autonomia financeira do trabalhador informal; proteção de dados pessoais (endereço e contato protegidos até a confirmação formal); redução do risco de exploração.
+* **Impacto Profissional e Econômico:** Criação de um histórico de reputação verificado e bilateral (avaliação mútua justa), gerando credibilidade profissional para o diarista e fortalecendo a dinâmica econômica dos bairros e comércios locais.
+
+---
+
 ## 📌 Funcionalidades Principais
 
 * **Mural Público de Oportunidades:** Listagem de vagas operacionais de curta duração com filtros por categoria profissional, faixa de valor e data.
