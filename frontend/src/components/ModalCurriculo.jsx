@@ -7,11 +7,11 @@ import {
   Clock,
   CheckCircle2,
   Check,
-  XCircle,
-  MessageSquare
+  XCircle
 } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
+import FeedbacksList from './FeedbacksList';
 
 export default function ModalCurriculo({
   isOpen,
@@ -136,7 +136,7 @@ export default function ModalCurriculo({
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#b45309', fontWeight: 600 }}>
                 <Star size={14} fill="#eab308" color="#eab308" />
-                {notaMedia} de avaliação
+                {notaMedia} {candidato.diarista_total_avaliacoes ? `(${candidato.diarista_total_avaliacoes} avaliações)` : 'de avaliação'}
               </span>
             </div>
           </div>
@@ -261,24 +261,14 @@ export default function ModalCurriculo({
           </p>
         </div>
 
-        {/* Mensagem enviada nesta candidatura */}
-        {candidato.mensagem && (
-          <div
-            style={{
-              backgroundColor: 'var(--bg-subtle)',
-              borderLeft: '4px solid var(--primary)',
-              padding: '0.75rem 1rem',
-              borderRadius: '0 var(--radius-sm) var(--radius-sm) 0'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-              <MessageSquare size={13} color="var(--primary)" /> Mensagem enviada nesta candidatura:
-            </div>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-              "{candidato.mensagem}"
-            </p>
-          </div>
-        )}
+        {/* Avaliações e Feedbacks dos Contratantes Anteriores */}
+        <div style={{ marginTop: '0.5rem' }}>
+          <FeedbacksList
+            usuarioId={candidato.diarista_id}
+            titulo="Avaliações e Feedbacks de Contratantes"
+            tipoPapel="diarista"
+          />
+        </div>
       </div>
     </Modal>
   );
