@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: arandue_mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: quadro_bicos_db
+      MYSQL_USER: bicos_user
+      MYSQL_PASSWORD: bicos_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - arandue_mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: arandue_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "92:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  arandue_mysql_data:
