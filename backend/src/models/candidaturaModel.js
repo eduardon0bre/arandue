@@ -102,6 +102,27 @@ const candidaturaModel = {
     return rows[0] || null;
   },
 
+  async checkAgendaConflict(diaristaId, dataServico, excludeDemandaId = null) {
+    let query = `
+      SELECT c.id, d.id AS demanda_id, d.titulo, d.data_servico
+      FROM candidaturas c
+      INNER JOIN demandas d ON c.demanda_id = d.id
+      WHERE c.diarista_id = ?
+        AND c.status = 'aceita'
+        AND DATE(d.data_servico) = DATE(?)
+        AND d.status IN ('aberta', 'preenchida')
+    `;
+    const params = [diaristaId, dataServico];
+    if (excludeDemandaId) {
+      query += ' AND d.id != ?';
+      params.push(excludeDemandaId);
+    }
+    query += ' LIMIT 1';
+
+    const [rows] = await db.query(query, params);
+    return rows[0] || null;
+  },
+
   async updateStatus(id, status) {
     const connection = await db.getConnection();
     try {
@@ -117,6 +138,57 @@ const candidaturaModel = {
         return result.affectedRows > 0;
       }
 
+      // Busca dados da candidatura e da demanda para validações
+      const [candRows] = await connection.query(
+        `SELECT c.id, c.demanda_id, c.diarista_id, d.data_servico, d.status AS demanda_status
+         FROM candidaturas c
+         INNER JOIN demandas d ON c.demanda_id = d.id
+         WHERE c.id = ?`,
+        [id]
+      );
+
+      if (!candRows || candRows.length === 0) {
+        await connection.rollback();
+        return false;
+      }
+
+      const candInfo = candRows[0];
+
+      if (status === 'aceita') {
+        // Validação ACID de conflito de agenda do diarista
+        const [conflitos] = await connection.query(
+          `SELECT c.id, d.titulo, d.data_servico
+           FROM candidaturas c
+           INNER JOIN demandas d ON c.demanda_id = d.id
+           WHERE c.diarista_id = ?
+             AND c.status = 'aceita'
+             AND c.demanda_id != ?
+             AND DATE(d.data_servico) = DATE(?)
+             AND d.status IN ('aberta', 'preenchida')
+           LIMIT 1`,
+          [candInfo.diarista_id, candInfo.demanda_id, candInfo.data_servico]
+        );
+
+        if (conflitos && conflitos.length > 0) {
+          await connection.rollback();
+          const err = new Error('Conflito de agenda: o diarista já possui outro serviço aprovado nesta mesma data.');
+          err.code = 'CONFLICT_SCHEDULE';
+          throw err;
+        }
+
+        // Atualiza a demanda para preenchida
+        await connection.query(
+          "UPDATE demandas SET status = 'preenchida' WHERE id = ?",
+          [candInfo.demanda_id]
+        );
+
+        // Remove as outras candidaturas concorrentes pendentes da mesma vaga
+        await connection.query(
+          "DELETE FROM candidaturas WHERE demanda_id = ? AND id != ? AND status = 'pendente'",
+          [candInfo.demanda_id, id]
+        );
+      }
+
       // Atualiza o status da candidatura selecionada
       const [result] = await connection.query(
         'UPDATE candidaturas SET status = ? WHERE id = ?',
@@ -126,26 +198,6 @@ const candidaturaModel = {
       if (result.affectedRows === 0) {
         await connection.rollback();
         return false;
-      }
-
-      // Se a candidatura for aceita, marca a demanda como preenchida
-      // e remove automaticamente as demais candidaturas pendentes da mesma vaga
-      if (status === 'aceita') {
-        const [rows] = await connection.query(
-          'SELECT demanda_id FROM candidaturas WHERE id = ?',
-          [id]
-        );
-        if (rows.length > 0) {
-          const demandaId = rows[0].demanda_id;
-          await connection.query(
-            "UPDATE demandas SET status = 'preenchida' WHERE id = ?",
-            [demandaId]
-          );
-          await connection.query(
-            "DELETE FROM candidaturas WHERE demanda_id = ? AND id != ? AND status = 'pendente'",
-            [demandaId, id]
-          );
-        }
       }
 
       await connection.commit();

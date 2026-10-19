@@ -1,0 +1,411 @@
+.googleButtonWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0.25rem 0 1rem 0;
+}
+
+.customGoogleBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  width: 100%;
+  height: 48px;
+  padding: 0 1.5rem;
+  background-color: #ffffff;
+  color: #1f1f1f;
+  border: 1px solid #747775;
+  border-radius: 24px;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08);
+  outline: none;
+}
+
+.customGoogleBtn:hover:not(:disabled) {
+  background-color: #f8fafd;
+  border-color: #0b57d0;
+  box-shadow: 0 2px 6px rgba(11, 87, 208, 0.16);
+  transform: translateY(-1px);
+}
+
+.customGoogleBtn:active:not(:disabled) {
+  background-color: #f0f4f9;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.12);
+  transform: translateY(0);
+}
+
+.customGoogleBtn:focus-visible {
+  border-color: #0b57d0;
+  box-shadow: 0 0 0 3px rgba(11, 87, 208, 0.25);
+}
+
+.customGoogleBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.googleIcon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.btnText {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #1f1f1f;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dadce0;
+  border-top-color: #1a73e8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 1.15rem 0 0.5rem 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+  padding: 0 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* Modal de Seleção de Conta Google */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalCard {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 2rem 1.75rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+}
+
+.closeButton:hover {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+.modalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modalGoogleLogo {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0.75rem;
+}
+
+.modalTitle {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #202124;
+  margin: 0 0 0.35rem;
+}
+
+.modalSubtitle {
+  font-size: 0.88rem;
+  color: #5f6368;
+  margin: 0;
+}
+
+.accountList {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 1.25rem;
+}
+
+.accountItem {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #f1f3f4;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  border-radius: 8px;
+}
+
+.accountItem:last-child {
+  border-bottom: none;
+}
+
+.accountItem:hover {
+  background-color: #f8fafd;
+}
+
+.avatarImg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatarCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285F4, #34A853);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.accountDetails {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.accountName {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #202124;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.accountEmail {
+  font-size: 0.82rem;
+  color: #5f6368;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addAccountBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 0.5rem;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  color: #1a73e8;
+  font-weight: 500;
+  font-size: 0.92rem;
+  border-radius: 8px;
+}
+
+.addAccountBtn:hover {
+  background-color: #f8fafd;
+}
+
+.addIconCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px dashed #1a73e8;
+  color: #1a73e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.customEmailForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.formInput {
+  height: 44px;
+  padding: 0 0.85rem;
+  font-size: 0.92rem;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color: #1f1f1f;
+}
+
+.formInput:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.cancelBtn {
+  padding: 0.6rem 1rem;
+  border: 1px solid #dadce0;
+  background: transparent;
+  border-radius: 6px;
+  color: #5f6368;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background-color: #f1f3f4;
+}
+
+.confirmBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  background: #1a73e8;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: #1557b0;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.envWarningBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+  font-size: 0.78rem;
+  color: #92400e;
+  line-height: 1.35;
+}
+
+.envWarningBanner code {
+  background-color: #fef3c7;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.forceGoogleBtn {
+  margin-top: 0.75rem;
+  background: transparent;
+  border: none;
+  color: #1a73e8;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: center;
+  padding: 0.25rem 0;
+}
+
+.forceGoogleBtn:hover {
+  color: #1557b0;
+}

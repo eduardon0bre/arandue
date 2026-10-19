@@ -60,6 +60,17 @@ const candidaturaController = {
         });
       }
 
+      // Trava de Conflito de Agenda (SISTEMA.MD)
+      const conflito = await candidaturaModel.checkAgendaConflict(diarista_id, demanda.data_servico);
+      if (conflito) {
+        return res.status(400).json({
+          success: false,
+          error: 'CONFLICT_SCHEDULE',
+          code: 'CONFLICT_SCHEDULE',
+          message: 'Conflito de agenda: o trabalhador já possui um serviço aprovado para a mesma data desta vaga.'
+        });
+      }
+
       const novaCandidatura = await candidaturaModel.create({
         demanda_id,
         diarista_id,
@@ -133,6 +144,17 @@ const candidaturaController = {
         return res.status(400).json({
           success: false,
           message: 'Você já possui candidatura registrada para esta vaga.'
+        });
+      }
+
+      // Trava de Conflito de Agenda (SISTEMA.MD)
+      const conflito = await candidaturaModel.checkAgendaConflict(diarista_id, demanda.data_servico);
+      if (conflito) {
+        return res.status(400).json({
+          success: false,
+          error: 'CONFLICT_SCHEDULE',
+          code: 'CONFLICT_SCHEDULE',
+          message: 'Conflito de agenda: você já possui um serviço aprovado para a mesma data desta vaga.'
         });
       }
 
@@ -260,7 +282,19 @@ const candidaturaController = {
         });
       }
 
-      await candidaturaModel.updateStatus(id, status);
+      try {
+        await candidaturaModel.updateStatus(id, status);
+      } catch (updateErr) {
+        if (updateErr.code === 'CONFLICT_SCHEDULE') {
+          return res.status(400).json({
+            success: false,
+            error: 'CONFLICT_SCHEDULE',
+            code: 'CONFLICT_SCHEDULE',
+            message: updateErr.message
+          });
+        }
+        throw updateErr;
+      }
 
       const candidaturaAtualizada = await candidaturaModel.findById(id);
 

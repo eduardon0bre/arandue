@@ -5,6 +5,8 @@ import {
   PlusCircle,
   LayoutDashboard,
   FileText,
+  Calendar,
+  Users,
   Settings,
   LogOut,
   Menu,
@@ -82,6 +84,16 @@ export default function Navbar() {
             <span>Vagas Disponíveis</span>
           </NavLink>
 
+          {/* Buscar Diaristas e Profissionais Disponíveis */}
+          <NavLink
+            to="/diaristas"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={fecharMenuMobile}
+          >
+            <Users size={17} />
+            <span>Buscar Diaristas</span>
+          </NavLink>
+
           {/* Criar Vaga (visível no menu caso tenha permissão) */}
           {podeCriarVaga && (
             <NavLink
@@ -103,6 +115,18 @@ export default function Navbar() {
             >
               <LayoutDashboard size={17} />
               <span>Minhas Demandas</span>
+            </NavLink>
+          )}
+
+          {/* Agenda de Disponibilidade (Visível para Diarista e Ambos) */}
+          {podeVerCurriculo && (
+            <NavLink
+              to="/disponibilidade"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={fecharMenuMobile}
+            >
+              <Calendar size={17} />
+              <span>Minha Agenda</span>
             </NavLink>
           )}
 
@@ -204,6 +228,25 @@ export default function Navbar() {
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{usuarioAtual?.nome}</div>
                     <div style={{ color: 'var(--text-muted)' }}>{usuarioAtual?.email}</div>
                   </div>
+
+                  {podeVerCurriculo && (
+                    <Link
+                      to="/disponibilidade"
+                      onClick={fecharMenuMobile}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.6rem 1rem',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <Calendar size={15} color="var(--text-muted)" />
+                      <span>Minha Agenda</span>
+                    </Link>
+                  )}
 
                   <Link
                     to="/configuracoes"

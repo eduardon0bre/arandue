@@ -58,37 +58,53 @@ export default function MuralVagas() {
     navigate('/demandas/nova');
   };
 
-  // Carrega demandas da API
-  const carregarDemandas = async () => {
+  // Carrega demandas da API ao alterar filtros
+  useEffect(() => {
+    let cancelado = false;
+
+    const params = {};
+    if (categoria) params.categoria = categoria;
+    if (statusFiltro) params.status = statusFiltro;
+    if (busca) params.busca = busca;
+
+    api.get('/demandas', { params })
+      .then((response) => {
+        if (!cancelado) {
+          setDemandas(response.data?.success ? (response.data.data || []) : []);
+          setErro(null);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelado) {
+          setErro(err.message || 'Falha ao carregar as oportunidades disponíveis.');
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelado = true;
+    };
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoria, statusFiltro]);
+
+  const handleBuscar = async (e) => {
+    if (e) e.preventDefault();
     try {
       setLoading(true);
       setErro(null);
-
       const params = {};
       if (categoria) params.categoria = categoria;
       if (statusFiltro) params.status = statusFiltro;
       if (busca) params.busca = busca;
 
       const response = await api.get('/demandas', { params });
-      if (response.data?.success) {
-        setDemandas(response.data.data || []);
-      } else {
-        setDemandas([]);
-      }
+      setDemandas(response.data?.success ? (response.data.data || []) : []);
     } catch (err) {
       setErro(err.message || 'Falha ao carregar as oportunidades disponíveis.');
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    carregarDemandas();
-  }, [categoria, statusFiltro]);
-
-  const handleBuscar = (e) => {
-    e.preventDefault();
-    carregarDemandas();
   };
 
   // Carrega candidaturas já realizadas pelo usuário diarista

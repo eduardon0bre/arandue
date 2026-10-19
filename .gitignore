@@ -12,3 +12,7 @@ yarn-error.log*
 # Build folders
 dist/
 build/
+
+# Agentes e IA
+.agents/
+skills-lock.json

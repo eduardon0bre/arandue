@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 import {
   mockDbQuery,
   resetMockDb,
@@ -433,4 +434,90 @@ describe('Integration Tests: RBAC, Autenticação e Gestão de Vagas/Demandas', 
       expect(candidaturasDepois.some((c) => c.id === cand!.id)).toBe(false);
     });
   });
+
+  describe('7. Autenticação com o Google: POST /api/auth/google', () => {
+    it('deve retornar 400 Bad Request se nenhum token for enviado', async () => {
+      const response = await request(app)
+        .post('/api/auth/google')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Token de autenticação do Google não fornecido');
+    });
+
+    it('deve autenticar e vincular conta Google para usuário existente por e-mail', async () => {
+      const mockGoogleToken = jwt.sign(
+        {
+          sub: 'google_oauth_12345',
+          email: 'carlos.mendes@buffetsabor.com.br',
+          name: 'Carlos Mendes',
+          picture: 'https://lh3.googleusercontent.com/a/test-avatar'
+        },
+        'test-secret'
+      );
+
+      const response = await request(app)
+        .post('/api/auth/google')
+        .send({ token: mockGoogleToken });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.user).toHaveProperty('id', 1);
+      expect(response.body.user.email).toBe('carlos.mendes@buffetsabor.com.br');
+      expect(response.body).toHaveProperty('token');
+      expect(response.body.redirectUrl).toBe('/');
+      expect(response.body.cadastroIncompleto).toBe(false);
+    });
+
+    it('deve cadastrar novo usuário automaticamente via Google se ele não existir', async () => {
+      const mockGoogleToken = jwt.sign(
+        {
+          sub: 'google_oauth_99999',
+          email: 'novo.google@exemplo.com',
+          name: 'Novo Usuário Google',
+          picture: 'https://lh3.googleusercontent.com/a/novo-avatar'
+        },
+        'test-secret'
+      );
+
+      const response = await request(app)
+        .post('/api/auth/google')
+        .send({ token: mockGoogleToken, role: 'diarista' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.user.email).toBe('novo.google@exemplo.com');
+      expect(response.body.user.tipo).toBe('diarista');
+      expect(response.body.user.avatar_url).toBe('https://lh3.googleusercontent.com/a/novo-avatar');
+      expect(response.body.redirectUrl).toBe('/completar-cadastro');
+      expect(response.body.cadastroIncompleto).toBe(true);
+    });
+
+    it('deve logar diretamente por google_id quando o usuário já foi vinculado anteriormente', async () => {
+      const mockGoogleToken = jwt.sign(
+        {
+          sub: 'google_oauth_already_linked',
+          email: 'vinculado.google@exemplo.com',
+          name: 'Vinculado Google',
+          picture: 'https://lh3.googleusercontent.com/a/avatar'
+        },
+        'test-secret'
+      );
+
+      await request(app)
+        .post('/api/auth/google')
+        .send({ token: mockGoogleToken, role: 'contratante' });
+
+      // Segundo login com mesmo google_id
+      const response2 = await request(app)
+        .post('/api/auth/google')
+        .send({ credential: mockGoogleToken });
+
+      expect(response2.status).toBe(200);
+      expect(response2.body.success).toBe(true);
+      expect(response2.body.user.email).toBe('vinculado.google@exemplo.com');
+    });
+  });
 });
+

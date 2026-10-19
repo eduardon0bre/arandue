@@ -3,28 +3,20 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   PlusCircle,
-  Edit,
-  Trash2,
-  Users,
-  CheckCircle2,
-  Phone,
-  MessageCircle,
-  Check,
-  XCircle,
   Briefcase,
   FileCheck,
-  FileText,
   Star,
-  ShieldCheck
+  CheckCircle2
 } from 'lucide-react';
-import Table from '../components/Table';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import ModalCurriculo from '../components/ModalCurriculo';
 import ModalAvaliacao from '../components/ModalAvaliacao';
+import ModalCandidatosDemanda from '../components/ModalCandidatosDemanda';
+import TabelaDemandasContratante from '../components/TabelaDemandasContratante';
+import TabelaCandidaturasDiarista from '../components/TabelaCandidaturasDiarista';
 import FeedbacksList from '../components/FeedbacksList';
 import Alert from '../components/Alert';
-import LoadingSpinner from '../components/LoadingSpinner';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
 
@@ -38,14 +30,13 @@ export default function PainelContratante() {
   // RF-08: Controle de abas para usuários com papel 'AMBOS'
   const [abaAtiva, setAbaAtiva] = useState(() => (isDiaristaExclusivo ? 'candidaturas' : 'vagas'));
 
-  // Sincroniza aba ativa caso o papel mude
-  useEffect(() => {
-    if (isDiaristaExclusivo) {
-      setAbaAtiva('candidaturas');
-    } else if (isContratanteExclusivo) {
-      setAbaAtiva('vagas');
-    }
-  }, [isDiaristaExclusivo, isContratanteExclusivo]);
+  // Garante aba válida sem efeito colateral sincronizado
+  const abaEfetiva =
+    isDiaristaExclusivo && abaAtiva === 'vagas'
+      ? 'candidaturas'
+      : isContratanteExclusivo && abaAtiva === 'candidaturas'
+        ? 'vagas'
+        : abaAtiva;
 
   // Estados de Vagas Criadas (Contratante)
   const [demandas, setDemandas] = useState([]);
@@ -60,98 +51,92 @@ export default function PainelContratante() {
   const [resumoAvaliacao, setResumoAvaliacao] = useState(null);
 
   useEffect(() => {
-    async function carregarResumoMedia() {
-      if (!usuarioAtual?.id) return;
-      try {
-        const res = await api.get(`/avaliacoes/usuario/${usuarioAtual.id}/media`);
-        if (res.data?.success && res.data.data) {
+    let ativo = true;
+    if (!usuarioAtual?.id) return;
+
+    api.get(`/avaliacoes/usuario/${usuarioAtual.id}/media`)
+      .then((res) => {
+        if (ativo && res.data?.success && res.data.data) {
           setResumoAvaliacao(res.data.data);
         }
-      } catch (err) {
+      })
+      .catch(() => {
         // Fallback silencioso
-      }
-    }
-    carregarResumoMedia();
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, [usuarioAtual?.id, avaliacoesEnviadas]);
 
-  // Modal de Conclusão de Demanda
+  // Modais e ações
   const [demandaParaConcluir, setDemandaParaConcluir] = useState(null);
   const [concluindoDemanda, setConcluindoDemanda] = useState(false);
-
-  // Modal de Avaliação e Feedback Mútuo
   const [dadosModalAvaliacao, setDadosModalAvaliacao] = useState(null);
-
   const [alerta, setAlerta] = useState(null);
-
-  // Modal de Exclusão de Demanda
   const [demandaParaExcluir, setDemandaParaExcluir] = useState(null);
   const [excluindo, setExcluindo] = useState(false);
-
-  // Modal de Candidatos da Demanda
   const [demandaCandidatos, setDemandaCandidatos] = useState(null);
   const [candidatos, setCandidatos] = useState([]);
   const [carregandoCandidatos, setCarregandoCandidatos] = useState(false);
   const [processandoCandidatoId, setProcessandoCandidatoId] = useState(null);
-
-  // Modal de Visualização de Currículo do Diarista
   const [candidatoCurriculo, setCandidatoCurriculo] = useState(null);
-
-  // Modal de Confirmação de Recusa (Ação Destrutiva / DELETE)
   const [candidatoParaRecusar, setCandidatoParaRecusar] = useState(null);
   const [recusandoCandidato, setRecusandoCandidato] = useState(false);
 
-  // Carregar demandas criadas
-  const carregarDemandas = async () => {
-    try {
-      setCarregandoDemandas(true);
-      const params = usuarioAtual?.id ? { contratante_id: usuarioAtual.id } : {};
-      const response = await api.get('/demandas', { params });
-      if (response.data?.success) {
-        setDemandas(response.data.data || []);
-      }
-    } catch (err) {
-      setAlerta({ type: 'danger', message: err.message || 'Erro ao carregar demandas.' });
-    } finally {
-      setCarregandoDemandas(false);
-    }
-  };
-
-  // Carregar candidaturas enviadas (RF-08 para Diarista e Ambos)
-  const carregarCandidaturas = async () => {
-    if (!usuarioAtual?.id) return;
-    try {
-      setCarregandoCandidaturas(true);
-      const response = await api.get(`/candidaturas/diarista/${usuarioAtual.id}`);
-      if (response.data?.success) {
-        setCandidaturas(response.data.data || []);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar candidaturas do usuário:', err);
-    } finally {
-      setCarregandoCandidaturas(false);
-    }
-  };
-
-  // Carregar histórico de avaliações enviadas pelo usuário
-  const carregarAvaliacoesEnviadas = async () => {
-    if (!usuarioAtual?.id) return;
-    try {
-      const response = await api.get(`/avaliacoes/enviadas/${usuarioAtual.id}`);
-      if (response.data?.success) {
-        setAvaliacoesEnviadas(response.data.data || []);
-      }
-    } catch {
-      // Falha silenciosa
-    }
-  };
-
+  // Carregamento inicial de dados sem chamada de setState síncrona
   useEffect(() => {
-    carregarDemandas();
-    carregarAvaliacoesEnviadas();
-    if (isDiaristaExclusivo || isAmbos) {
-      carregarCandidaturas();
+    let ativo = true;
+    const usuarioId = usuarioAtual?.id;
+
+    // 1. Demandas
+    const params = usuarioId ? { contratante_id: usuarioId } : {};
+    api.get('/demandas', { params })
+      .then((response) => {
+        if (ativo && response.data?.success) {
+          setDemandas(response.data.data || []);
+        }
+      })
+      .catch((err) => {
+        if (ativo) {
+          setAlerta({ type: 'danger', message: err.message || 'Erro ao carregar demandas.' });
+        }
+      })
+      .finally(() => {
+        if (ativo) setCarregandoDemandas(false);
+      });
+
+    // 2. Avaliações enviadas
+    if (usuarioId) {
+      api.get(`/avaliacoes/enviadas/${usuarioId}`)
+        .then((response) => {
+          if (ativo && response.data?.success) {
+            setAvaliacoesEnviadas(response.data.data || []);
+          }
+        })
+        .catch(() => {});
     }
-  }, [usuarioAtual, isDiaristaExclusivo, isAmbos]);
+
+    // 3. Candidaturas (se diarista ou ambos)
+    if (usuarioId && (isDiaristaExclusivo || isAmbos)) {
+      api.get(`/candidaturas/diarista/${usuarioId}`)
+        .then((response) => {
+          if (ativo && response.data?.success) {
+            setCandidaturas(response.data.data || []);
+          }
+        })
+        .catch((err) => {
+          console.error('Erro ao buscar candidaturas:', err);
+        })
+        .finally(() => {
+          if (ativo) setCarregandoCandidaturas(false);
+        });
+    }
+
+    return () => {
+      ativo = false;
+    };
+  }, [usuarioAtual?.id, isDiaristaExclusivo, isAmbos]);
 
   // Exclusão de Demanda
   const handleExecutarExclusao = async () => {
@@ -211,10 +196,8 @@ export default function PainelContratante() {
       setRecusandoCandidato(true);
       const response = await api.delete(`/candidaturas/${candidatoParaRecusar.id}`);
       if (response.data?.success) {
-        // Remove da lista de candidatos imediatamente
         setCandidatos((prev) => prev.filter((c) => c.id !== candidatoParaRecusar.id));
 
-        // Atualiza a contagem de candidatos na lista de demandas
         if (demandaCandidatos) {
           setDemandas((prev) =>
             prev.map((d) =>
@@ -225,7 +208,6 @@ export default function PainelContratante() {
           );
         }
 
-        // Se o currículo deste candidato estava aberto, fecha o modal de currículo
         if (candidatoCurriculo?.id === candidatoParaRecusar.id) {
           setCandidatoCurriculo(null);
         }
@@ -256,7 +238,6 @@ export default function PainelContratante() {
 
       if (response.data?.success) {
         if (novoStatus === 'aceita') {
-          // As outras candidaturas pendentes são excluídas pelo backend
           setCandidatos((prev) =>
             prev
               .filter((c) => c.id === candidaturaId)
@@ -310,17 +291,14 @@ export default function PainelContratante() {
       setConcluindoDemanda(true);
       const response = await api.patch(`/demandas/${demandaParaConcluir.id}/concluir`);
       if (response.data?.success) {
-        // Atualiza demandas locais imediatamente
         setDemandas((prev) =>
           prev.map((d) => (d.id === demandaParaConcluir.id ? { ...d, status: 'concluida' } : d))
         );
 
-        // Se o modal de candidatos estiver aberto para essa vaga, sincroniza
         if (demandaCandidatos?.id === demandaParaConcluir.id) {
           setDemandaCandidatos((prev) => (prev ? { ...prev, status: 'concluida' } : null));
         }
 
-        // Atualiza histórico de candidaturas locais (para diaristas)
         setCandidaturas((prev) =>
           prev.map((c) =>
             c.demanda_id === demandaParaConcluir.id ? { ...c, demanda_status: 'concluida' } : c
@@ -335,8 +313,7 @@ export default function PainelContratante() {
 
         setDemandaParaConcluir(null);
 
-        // Abre automaticamente o modal de avaliação após a conclusão
-        if (abaAtiva === 'vagas' || isContratanteExclusivo) {
+        if (abaEfetiva === 'vagas' || isContratanteExclusivo) {
           if (diaristaAceito?.id) {
             handleAbrirAvaliacao(demandaFinalizada, diaristaAceito.id, diaristaAceito.nome, 'diarista');
           }
@@ -379,286 +356,6 @@ export default function PainelContratante() {
     ]);
   };
 
-  // Colunas da Tabela de Vagas Criadas (Contratante)
-  const colunasVagas = [
-    {
-      header: 'Vaga & Categoria',
-      render: (item) => (
-        <div>
-          <strong style={{ color: 'var(--text-primary)', display: 'block', fontSize: '0.95rem' }}>
-            {item.titulo}
-          </strong>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {item.categoria} • {item.bairro}
-          </span>
-        </div>
-      )
-    },
-    {
-      header: 'Data do Serviço',
-      render: (item) => (
-        <span style={{ fontSize: '0.9rem' }}>
-          {new Date(item.data_servico).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-        </span>
-      )
-    },
-    {
-      header: 'Valor Diária',
-      render: (item) => (
-        <strong style={{ color: 'var(--primary)', fontSize: '0.95rem' }}>
-          {parseFloat(item.valor_diaria).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-        </strong>
-      )
-    },
-    {
-      header: 'Status',
-      render: (item) => {
-        const statusMap = {
-          aberta: { label: 'Aberta', badge: 'badge-success' },
-          preenchida: { label: 'Preenchida', badge: 'badge-warning' },
-          concluida: { label: 'Concluída', badge: 'badge-info' },
-          cancelada: { label: 'Cancelada', badge: 'badge-danger' }
-        };
-        const s = statusMap[item.status] || { label: item.status, badge: 'badge-secondary' };
-        return <span className={`badge ${s.badge}`}>{s.label}</span>;
-      }
-    },
-    {
-      header: 'Candidatos',
-      render: (item) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleAbrirCandidatos(item)}
-          icon={<Users size={14} />}
-        >
-          {item.total_candidatos || 0} candidato(s)
-        </Button>
-      )
-    },
-    {
-      header: 'Ações',
-      render: (item) => {
-        const avaliacaoExistente = avaliacoesEnviadas.find((a) => a.demanda_id === item.id);
-
-        return (
-          <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-            {/* Se estiver preenchida, opção de marcar como concluída */}
-            {item.status === 'preenchida' && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => handleIniciarConclusao(item)}
-                icon={<CheckCircle2 size={14} />}
-                title="Concluir trabalho e confirmar pagamento por fora"
-              >
-                Concluir Diária
-              </Button>
-            )}
-
-            {/* Se estiver concluída, opção de avaliar diarista ou visualizar avaliação */}
-            {item.status === 'concluida' && (
-              avaliacaoExistente ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleAbrirAvaliacao(
-                      item,
-                      avaliacaoExistente.avaliado_id || item.diarista_aceito_id,
-                      item.diarista_aceito_nome || 'Diarista',
-                      'diarista'
-                    )
-                  }
-                  icon={<Star size={14} color="#f59e0b" fill="#f59e0b" />}
-                  title="Visualizar avaliação e feedback enviados"
-                >
-                  Ver Avaliação (★ {avaliacaoExistente.nota})
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() =>
-                    handleAbrirAvaliacao(
-                      item,
-                      item.diarista_aceito_id,
-                      item.diarista_aceito_nome || 'Diarista',
-                      'diarista'
-                    )
-                  }
-                  icon={<Star size={14} />}
-                  title="Avaliar e deixar feedback para o diarista"
-                >
-                  Avaliar Diarista
-                </Button>
-              )
-            )}
-
-            {item.status === 'aberta' && (
-              <Link to={`/demandas/editar/${item.id}`}>
-                <Button variant="outline" size="sm" icon={<Edit size={14} />} title="Editar vaga">
-                  Editar
-                </Button>
-              </Link>
-            )}
-
-            {item.status !== 'concluida' && (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => setDemandaParaExcluir(item)}
-                icon={<Trash2 size={14} />}
-                title="Excluir vaga"
-              >
-                Excluir
-              </Button>
-            )}
-          </div>
-        );
-      }
-    }
-  ];
-
-  // Colunas da Tabela de Minhas Candidaturas (Diarista)
-  const colunasCandidaturas = [
-    {
-      header: 'Vaga & Contratante',
-      render: (item) => (
-        <div>
-          <strong style={{ color: 'var(--text-primary)', display: 'block', fontSize: '0.95rem' }}>
-            {item.demanda_titulo || `Demanda #${item.demanda_id}`}
-          </strong>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Anunciante: {item.contratante_nome || 'Contratante local'}
-          </span>
-        </div>
-      )
-    },
-    {
-      header: 'Data Prevista',
-      render: (item) => {
-        const dataVal = item.demanda_data || item.demanda_data_servico;
-        return (
-          <span style={{ fontSize: '0.9rem' }}>
-            {dataVal ? new Date(dataVal).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '--'}
-          </span>
-        );
-      }
-    },
-    {
-      header: 'Valor Acordado',
-      render: (item) => (
-        <strong style={{ color: 'var(--primary)', fontSize: '0.95rem' }}>
-          {item.demanda_valor ? parseFloat(item.demanda_valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '--'}
-        </strong>
-      )
-    },
-    {
-      header: 'Status da Inscrição',
-      render: (item) => {
-        const statusCand = item.status || item.candidatura_status;
-        if (statusCand === 'aceita') {
-          return <span className="badge badge-success">✓ Aprovada</span>;
-        }
-        if (statusCand === 'recusada') {
-          return <span className="badge badge-danger">Recusada</span>;
-        }
-        return <span className="badge badge-warning">Em Análise</span>;
-      }
-    },
-    {
-      header: 'Contato & Próximo Passo',
-      render: (item) => {
-        const statusCand = item.status || item.candidatura_status;
-        if (statusCand === 'aceita') {
-          const isConcluida = item.demanda_status === 'concluida';
-          const avaliacaoDiarista = avaliacoesEnviadas.find((a) => a.demanda_id === item.demanda_id);
-
-          return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: isConcluida ? 'var(--text-secondary)' : '#15803d', fontWeight: 600 }}>
-                <CheckCircle2 size={14} color={isConcluida ? '#0284c7' : '#15803d'} />
-                {isConcluida ? 'Diária Finalizada' : 'Serviço confirmado!'}
-              </div>
-
-              {item.contratante_telefone && (
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <Phone size={13} color="#15803d" /> {item.contratante_telefone}
-                </span>
-              )}
-
-              {/* Botão de Marcar como Concluído (Diarista) quando ainda preenchida */}
-              {!isConcluida && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleIniciarConclusao({
-                      id: item.demanda_id,
-                      titulo: item.demanda_titulo,
-                      valor_diaria: item.demanda_valor,
-                      contratante_id: item.contratante_id,
-                      contratante_nome: item.contratante_nome
-                    })
-                  }
-                  icon={<CheckCircle2 size={13} />}
-                  title="Confirmar término do trabalho e recebimento por fora"
-                >
-                  Marcar como Concluído
-                </Button>
-              )}
-
-              {/* Ações após concluída: Avaliar Contratante ou Ver Avaliação */}
-              {isConcluida && (
-                avaliacaoDiarista ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      handleAbrirAvaliacao(
-                        { id: item.demanda_id, titulo: item.demanda_titulo, valor_diaria: item.demanda_valor },
-                        item.contratante_id,
-                        item.contratante_nome || 'Contratante',
-                        'contratante'
-                      )
-                    }
-                    icon={<Star size={13} color="#f59e0b" fill="#f59e0b" />}
-                    title="Ver feedback enviado ao empregador"
-                  >
-                    Ver Avaliação (★ {avaliacaoDiarista.nota})
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() =>
-                      handleAbrirAvaliacao(
-                        { id: item.demanda_id, titulo: item.demanda_titulo, valor_diaria: item.demanda_valor },
-                        item.contratante_id,
-                        item.contratante_nome || 'Contratante',
-                        'contratante'
-                      )
-                    }
-                    icon={<Star size={13} />}
-                    title="Avaliar ambiente de trabalho e pagamento combinado"
-                  >
-                    Avaliar Contratante
-                  </Button>
-                )
-              )}
-            </div>
-          );
-        }
-        return (
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Aguardando decisão do contratante
-          </span>
-        );
-      }
-    }
-  ];
-
   return (
     <div className="container" style={{ paddingBottom: '3rem' }}>
       {/* Header do Painel */}
@@ -673,18 +370,57 @@ export default function PainelContratante() {
         }}
       >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              color: 'var(--primary)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              textTransform: 'uppercase',
+              marginBottom: '0.25rem'
+            }}
+          >
             <LayoutDashboard size={16} /> Central de Demandas
           </div>
           <h1 style={{ fontSize: '1.75rem', color: 'var(--text-primary)', margin: 0 }}>
             Minhas Demandas
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span>Gerenciamento de serviços e oportunidades para o perfil <strong>{usuarioAtual?.nome}</strong> ({usuarioAtual?.tipo}).</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', borderRadius: 'var(--radius-full)', padding: '0.15rem 0.55rem', fontSize: '0.8rem', fontWeight: 700 }}>
+          <p
+            style={{
+              color: 'var(--text-secondary)',
+              fontSize: '0.9rem',
+              marginTop: '0.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              flexWrap: 'wrap'
+            }}
+          >
+            <span>
+              Gerenciamento de serviços e oportunidades para o perfil{' '}
+              <strong>{usuarioAtual?.nome}</strong> ({usuarioAtual?.tipo}).
+            </span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                backgroundColor: '#fef3c7',
+                color: '#b45309',
+                border: '1px solid #fde68a',
+                borderRadius: 'var(--radius-full)',
+                padding: '0.15rem 0.55rem',
+                fontSize: '0.8rem',
+                fontWeight: 700
+              }}
+            >
               <Star size={13} fill="#f59e0b" color="#f59e0b" />
               {resumoAvaliacao && resumoAvaliacao.total_avaliacoes > 0
-                ? `${Number(resumoAvaliacao.nota_media).toFixed(1)} ★ (${resumoAvaliacao.total_avaliacoes} ${resumoAvaliacao.total_avaliacoes === 1 ? 'avaliação' : 'avaliações'})`
+                ? `${Number(resumoAvaliacao.nota_media).toFixed(1)} ★ (${resumoAvaliacao.total_avaliacoes} ${
+                    resumoAvaliacao.total_avaliacoes === 1 ? 'avaliação' : 'avaliações'
+                  })`
                 : usuarioAtual?.nota_media
                   ? `${Number(usuarioAtual.nota_media).toFixed(1)} ★`
                   : '5.0 ★'}
@@ -734,9 +470,9 @@ export default function PainelContratante() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
-              backgroundColor: abaAtiva === 'vagas' ? '#ffffff' : 'transparent',
-              color: abaAtiva === 'vagas' ? 'var(--primary)' : 'var(--text-secondary)',
-              boxShadow: abaAtiva === 'vagas' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              backgroundColor: abaEfetiva === 'vagas' ? '#ffffff' : 'transparent',
+              color: abaEfetiva === 'vagas' ? 'var(--primary)' : 'var(--text-secondary)',
+              boxShadow: abaEfetiva === 'vagas' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.15s ease'
             }}
           >
@@ -761,9 +497,9 @@ export default function PainelContratante() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
-              backgroundColor: abaAtiva === 'candidaturas' ? '#ffffff' : 'transparent',
-              color: abaAtiva === 'candidaturas' ? 'var(--primary)' : 'var(--text-secondary)',
-              boxShadow: abaAtiva === 'candidaturas' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              backgroundColor: abaEfetiva === 'candidaturas' ? '#ffffff' : 'transparent',
+              color: abaEfetiva === 'candidaturas' ? 'var(--primary)' : 'var(--text-secondary)',
+              boxShadow: abaEfetiva === 'candidaturas' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.15s ease'
             }}
           >
@@ -787,70 +523,56 @@ export default function PainelContratante() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
-            backgroundColor: abaAtiva === 'feedbacks' ? '#ffffff' : 'transparent',
-            color: abaAtiva === 'feedbacks' ? 'var(--primary)' : 'var(--text-secondary)',
-            boxShadow: abaAtiva === 'feedbacks' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            backgroundColor: abaEfetiva === 'feedbacks' ? '#ffffff' : 'transparent',
+            color: abaEfetiva === 'feedbacks' ? 'var(--primary)' : 'var(--text-secondary)',
+            boxShadow: abaEfetiva === 'feedbacks' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
             transition: 'all 0.15s ease'
           }}
         >
-          <Star size={16} color={abaAtiva === 'feedbacks' ? '#f59e0b' : 'currentColor'} fill={abaAtiva === 'feedbacks' ? '#f59e0b' : 'none'} />
+          <Star
+            size={16}
+            color={abaEfetiva === 'feedbacks' ? '#f59e0b' : 'currentColor'}
+            fill={abaEfetiva === 'feedbacks' ? '#f59e0b' : 'none'}
+          />
           <span>Feedbacks & Notas</span>
         </button>
       </div>
 
       {/* Visão 1: Vagas Criadas (Contratante e Ambos) */}
-      {abaAtiva === 'vagas' && (
-        <div style={{ backgroundColor: '#ffffff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
-              Vagas Publicadas por Você
-            </h2>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {demandas.length} vaga(s) cadastrada(s)
-            </span>
-          </div>
-
-          {carregandoDemandas ? (
-            <LoadingSpinner text="Carregando vagas..." />
-          ) : (
-            <Table
-              columns={colunasVagas}
-              data={demandas}
-              keyExtractor={(item) => item.id}
-              emptyMessage="Você ainda não publicou nenhuma vaga. Clique em 'Criar Nova Vaga' para começar."
-            />
-          )}
-        </div>
+      {abaEfetiva === 'vagas' && (
+        <TabelaDemandasContratante
+          demandas={demandas}
+          carregando={carregandoDemandas}
+          avaliacoesEnviadas={avaliacoesEnviadas}
+          onAbrirCandidatos={handleAbrirCandidatos}
+          onIniciarConclusao={handleIniciarConclusao}
+          onAbrirAvaliacao={handleAbrirAvaliacao}
+          onExcluir={setDemandaParaExcluir}
+        />
       )}
 
       {/* Visão 2: Minhas Candidaturas (Diarista e Ambos) */}
-      {abaAtiva === 'candidaturas' && (
-        <div style={{ backgroundColor: '#ffffff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', margin: 0 }}>
-              Histórico de Candidaturas Enviadas
-            </h2>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {candidaturas.length} candidatura(s)
-            </span>
-          </div>
-
-          {carregandoCandidaturas ? (
-            <LoadingSpinner text="Carregando candidaturas..." />
-          ) : (
-            <Table
-              columns={colunasCandidaturas}
-              data={candidaturas}
-              keyExtractor={(item) => item.id}
-              emptyMessage="Você ainda não se candidatou a nenhuma vaga. Acesse o Mural de Vagas para encontrar diárias abertas."
-            />
-          )}
-        </div>
+      {abaEfetiva === 'candidaturas' && (
+        <TabelaCandidaturasDiarista
+          candidaturas={candidaturas}
+          carregando={carregandoCandidaturas}
+          avaliacoesEnviadas={avaliacoesEnviadas}
+          onIniciarConclusao={handleIniciarConclusao}
+          onAbrirAvaliacao={handleAbrirAvaliacao}
+        />
       )}
 
       {/* Visão 3: Feedbacks Recebidos */}
-      {abaAtiva === 'feedbacks' && (
-        <div style={{ backgroundColor: '#ffffff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+      {abaEfetiva === 'feedbacks' && (
+        <div
+          style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-color)',
+            padding: '1.5rem',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        >
           <FeedbacksList
             usuarioId={usuarioAtual?.id}
             titulo="Feedbacks e Avaliações Recebidas no seu Perfil"
@@ -888,160 +610,22 @@ export default function PainelContratante() {
         </p>
       </Modal>
 
-      {/* Modal: Lista de Candidatos da Vaga */}
-      <Modal
+      {/* Modal: Lista e Gerenciamento de Candidatos da Vaga */}
+      <ModalCandidatosDemanda
         isOpen={Boolean(demandaCandidatos)}
         onClose={() => setDemandaCandidatos(null)}
-        title={`Candidatos: ${demandaCandidatos?.titulo}`}
-        maxWidth="640px"
-      >
-        {carregandoCandidatos ? (
-          <LoadingSpinner text="Carregando candidatos..." />
-        ) : candidatos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
-            Nenhum diarista se inscreveu para esta vaga até o momento.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {candidatos.map((cand) => (
-              <div
-                key={cand.id}
-                style={{
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
-                      {cand.diarista_nome}
-                    </strong>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.2rem' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Bairro: {cand.diarista_bairro || 'São Paulo'}
-                      </span>
-                      <span style={{ fontSize: '0.8rem', color: '#b45309', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
-                        ★ {cand.diarista_nota_media || '5.0'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    {cand.status === 'aceita' ? (
-                      <span className="badge badge-success">Aprovado</span>
-                    ) : cand.status === 'recusada' ? (
-                      <span className="badge badge-danger">Recusado</span>
-                    ) : (
-                      <span className="badge badge-warning">Pendente</span>
-                    )}
-                  </div>
-                </div>
-
-                {cand.status === 'aceita' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', backgroundColor: '#dcfce7', borderRadius: 'var(--radius-sm)', border: '1px solid #bbf7d0', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Phone size={14} /> Telefone: <strong>{cand.diarista_telefone}</strong>
-                    </span>
-
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleVisualizarCurriculo(cand)}
-                        icon={<FileText size={14} />}
-                      >
-                        Ver Currículo
-                      </Button>
-                      <a
-                        href={`https://wa.me/55${cand.diarista_telefone?.replace(/\D/g, '')}?text=Ol%C3%A1%20${encodeURIComponent(cand.diarista_nome)},%20sua%20candidatura%20no%20Quadro%20de%20Di%C3%A1rias%20foi%20aprovada!`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-sm btn-primary"
-                        style={{ backgroundColor: '#15803d', borderColor: '#15803d' }}
-                      >
-                        <MessageCircle size={14} /> Abrir WhatsApp
-                      </a>
-
-                      {demandaCandidatos?.status === 'preenchida' && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleIniciarConclusao(demandaCandidatos, { id: cand.diarista_id, nome: cand.diarista_nome })}
-                          icon={<CheckCircle2 size={14} />}
-                          title="Confirmar término do serviço e pagamento realizado"
-                        >
-                          Concluir Diária
-                        </Button>
-                      )}
-
-                      {demandaCandidatos?.status === 'concluida' && (
-                        (() => {
-                          const avaliacaoCand = avaliacoesEnviadas.find((a) => a.demanda_id === demandaCandidatos.id);
-                          return avaliacaoCand ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAbrirAvaliacao(demandaCandidatos, cand.diarista_id, cand.diarista_nome, 'diarista')}
-                              icon={<Star size={14} color="#f59e0b" fill="#f59e0b" />}
-                            >
-                              Ver Avaliação (★ {avaliacaoCand.nota})
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleAbrirAvaliacao(demandaCandidatos, cand.diarista_id, cand.diarista_nome, 'diarista')}
-                              icon={<Star size={14} />}
-                            >
-                              Avaliar Diarista
-                            </Button>
-                          );
-                        })()
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleVisualizarCurriculo(cand)}
-                      icon={<FileText size={14} />}
-                      title="Visualizar currículo completo do candidato"
-                    >
-                      Ver Currículo
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={processandoCandidatoId === cand.id || recusandoCandidato}
-                      onClick={() => handleIniciarRecusa(cand)}
-                      icon={<XCircle size={14} />}
-                      title="Recusar e apagar candidatura"
-                    >
-                      Recusar
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      disabled={processandoCandidatoId === cand.id || recusandoCandidato}
-                      loading={processandoCandidatoId === cand.id}
-                      onClick={() => handleMudarStatusCandidato(cand.id, 'aceita')}
-                      icon={<Check size={14} />}
-                    >
-                      Aprovar & Liberar Contato
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </Modal>
+        demanda={demandaCandidatos}
+        candidatos={candidatos}
+        carregando={carregandoCandidatos}
+        processandoCandidatoId={processandoCandidatoId}
+        recusandoCandidato={recusandoCandidato}
+        avaliacoesEnviadas={avaliacoesEnviadas}
+        onVisualizarCurriculo={handleVisualizarCurriculo}
+        onIniciarRecusa={handleIniciarRecusa}
+        onAprovar={(candId) => handleMudarStatusCandidato(candId, 'aceita')}
+        onIniciarConclusao={handleIniciarConclusao}
+        onAbrirAvaliacao={handleAbrirAvaliacao}
+      />
 
       {/* Modal: Confirmação de Recusa da Candidatura (Ação Destrutiva / DELETE) */}
       <Modal

@@ -50,7 +50,7 @@ export default function Curriculo() {
         if (res.data?.success && res.data.data) {
           setMediaReputacao(res.data.data);
         }
-      } catch (e) {
+      } catch {
         // Fallback
       }
     }

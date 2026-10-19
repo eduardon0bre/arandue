@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Star, MessageSquare, CheckCircle2, ShieldCheck } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
@@ -13,7 +13,7 @@ const DESCRICAO_NOTAS = {
   5: 'Excelente — Recomendo com certeza'
 };
 
-export default function ModalAvaliacao({
+function FormAvaliacaoConteudo({
   isOpen,
   onClose,
   demanda,
@@ -23,26 +23,11 @@ export default function ModalAvaliacao({
   avaliacaoExistente = null,
   onSalvar
 }) {
-  const [nota, setNota] = useState(5);
+  const [nota, setNota] = useState(() => avaliacaoExistente?.nota || 5);
   const [hoverNota, setHoverNota] = useState(0);
-  const [comentario, setComentario] = useState('');
+  const [comentario, setComentario] = useState(() => avaliacaoExistente?.comentario || '');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(null);
-
-  // Inicializa estado quando abrir o modal ou mudar avaliação existente
-  useEffect(() => {
-    if (avaliacaoExistente) {
-      setNota(avaliacaoExistente.nota || 5);
-      setComentario(avaliacaoExistente.comentario || '');
-    } else {
-      setNota(5);
-      setComentario('');
-    }
-    setHoverNota(0);
-    setErro(null);
-  }, [isOpen, avaliacaoExistente]);
-
-  if (!isOpen) return null;
 
   const isModoVisualizacao = Boolean(avaliacaoExistente);
 
@@ -127,7 +112,6 @@ export default function ModalAvaliacao({
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
         {/* Informações da Demanda */}
         {demanda && (
           <div
@@ -288,4 +272,10 @@ export default function ModalAvaliacao({
       </div>
     </Modal>
   );
+}
+
+export default function ModalAvaliacao({ isOpen, ...props }) {
+  if (!isOpen) return null;
+  const key = props.avaliacaoExistente?.id || `${props.demanda?.id}_${props.avaliadoId || 'novo'}`;
+  return <FormAvaliacaoConteudo key={key} isOpen={isOpen} {...props} />;
 }

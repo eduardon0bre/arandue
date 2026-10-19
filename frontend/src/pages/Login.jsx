@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Briefcase, Eye, EyeOff, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import api from '../services/api';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 import styles from './Login.module.css';
 
 export default function Login() {
@@ -55,6 +56,61 @@ export default function Login() {
   // Validador simples de e-mail
   const validarFormatoEmail = (valor) => {
     return /\S+@\S+\.\S+/.test(valor);
+  };
+
+  // Callback de sucesso com o Google
+  const handleGoogleSuccess = (usuarioRetornado, responseData) => {
+    if (usuarioRetornado?.id) {
+      const perfilEncontrado = perfisDisponiveis?.find(
+        (p) => p.id === Number(usuarioRetornado.id)
+      );
+      if (perfilEncontrado) {
+        trocarUsuario(usuarioRetornado.id);
+      } else {
+        login({
+          id: usuarioRetornado.id,
+          nome: usuarioRetornado.name || usuarioRetornado.nome,
+          email: usuarioRetornado.email,
+          tipo: usuarioRetornado.role || usuarioRetornado.tipo || 'contratante',
+          bairro: usuarioRetornado.bairro || '',
+          telefone: usuarioRetornado.telefone || '',
+          avatar_url: usuarioRetornado.avatar_url || null,
+          cadastroIncompleto: Boolean(
+            responseData?.cadastroIncompleto ||
+            responseData?.isNewUser ||
+            !usuarioRetornado.telefone ||
+            !usuarioRetornado.bairro
+          )
+        });
+      }
+    }
+
+    const precisaCompletar = Boolean(
+      responseData?.cadastroIncompleto ||
+      responseData?.isNewUser ||
+      usuarioRetornado?.cadastroIncompleto ||
+      !usuarioRetornado.telefone ||
+      !String(usuarioRetornado.telefone).trim() ||
+      !usuarioRetornado.bairro ||
+      !String(usuarioRetornado.bairro).trim()
+    );
+
+    if (precisaCompletar) {
+      setAlertaSucesso('Conta Google autenticada! Por favor, complete seu cadastro...');
+      setTimeout(() => {
+        navigate('/completar-cadastro');
+      }, 600);
+    } else {
+      setAlertaSucesso('Autenticação com o Google realizada com sucesso! Redirecionando...');
+      setTimeout(() => {
+        navigate(redirectUrl || '/');
+      }, 600);
+    }
+  };
+
+  // Callback de erro com o Google
+  const handleGoogleError = (mensagem) => {
+    setAlertaErro(mensagem);
   };
 
   // Alternar abas limpando alertas
@@ -197,17 +253,6 @@ export default function Login() {
     }
   };
 
-  // Preenchimento rápido para demonstração/testes
-  const preencherCredenciaisRapidas = (perfil) => {
-    setLoginForm({
-      identifier: perfil.email,
-      password: '123',
-      rememberMe: true
-    });
-    setErros({});
-    setAlertaErro(null);
-  };
-
   // Submissão de Cadastro
   const handleCadastroSubmit = async (e) => {
     e.preventDefault();
@@ -316,34 +361,7 @@ export default function Login() {
           <h1 className={styles.title}>
             {abaAtiva === 'login' ? 'Acessar Conta' : 'Criar Nova Conta'}
           </h1>
-          <p className={styles.subtitle}>
-            {abaAtiva === 'login'
-              ? 'Informe suas credenciais para continuar no sistema'
-              : 'Cadastre-se para anunciar ou encontrar serviços'}
-          </p>
         </header>
-
-        {/* Abas de Navegação (Tabs simples) */}
-        <div className={styles.tabNav} role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={abaAtiva === 'login'}
-            className={`${styles.tabButton} ${abaAtiva === 'login' ? styles.tabActive : ''}`}
-            onClick={() => trocarAba('login')}
-          >
-            Entrar
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={abaAtiva === 'cadastro'}
-            className={`${styles.tabButton} ${abaAtiva === 'cadastro' ? styles.tabActive : ''}`}
-            onClick={() => trocarAba('cadastro')}
-          >
-            Cadastrar
-          </button>
-        </div>
 
         {/* Banner de Feedback Global (RF-06) */}
         {alertaErro && (
@@ -363,6 +381,13 @@ export default function Login() {
         {/* Formulário de Login (RF-01 a RF-04) */}
         {abaAtiva === 'login' && (
           <form className={styles.form} onSubmit={handleLoginSubmit} noValidate>
+            <GoogleLoginButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              text="signin_with"
+              disabled={carregando}
+            />
+
             {/* Campo E-mail ou Usuário (RF-01) */}
             <div className={styles.fieldGroup}>
               <div className={styles.labelRow}>
@@ -481,6 +506,14 @@ export default function Login() {
         {/* Formulário de Cadastro */}
         {abaAtiva === 'cadastro' && (
           <form className={styles.form} onSubmit={handleCadastroSubmit} noValidate>
+            <GoogleLoginButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              role={cadastroForm.tipo}
+              text="signup_with"
+              disabled={carregando}
+            />
+
             {/* RF-01: Seleção de Papel Obrigatória */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
@@ -647,31 +680,6 @@ export default function Login() {
             </span>
           )}
         </footer>
-
-        {/* Atalhos Rápidos com Perfis de Teste para Facilitar Avaliação */}
-        <div className={styles.quickProfilesSection}>
-          <div className={styles.quickProfilesTitle}>
-            <span>Acesso Rápido (Perfis de Demonstração):</span>
-          </div>
-          <div className={styles.quickProfilesGrid}>
-            {[
-              perfisDisponiveis.find((p) => p.tipo === 'contratante'),
-              perfisDisponiveis.find((p) => p.tipo === 'diarista'),
-              perfisDisponiveis.find((p) => p.tipo === 'ambos')
-            ].filter(Boolean).map((perfil) => (
-              <button
-                key={perfil.id}
-                type="button"
-                className={styles.quickBadge}
-                onClick={() => preencherCredenciaisRapidas(perfil)}
-                title={`Preencher dados de ${perfil.nome}`}
-              >
-                {perfil.tipo === 'contratante' ? '👔' : perfil.tipo === 'diarista' ? '🛠️' : '🔄'}{' '}
-                {perfil.nome.split(' ')[0]} ({perfil.tipo})
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Modal de Recuperação de Senha (RF-05) */}
