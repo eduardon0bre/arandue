@@ -3,7 +3,15 @@ const router = express.Router();
 const notificacaoController = require('../controllers/notificacaoController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 
-// Todas as rotas de notificação exigem autenticação prévia
+// Rota para notificar diarista quando um contratante entra em contato (aceita contratante autenticado ou visitante)
+router.post('/contato-diarista', (req, res, next) => {
+  if (req.headers.authorization || req.headers['x-user-id']) {
+    return authMiddleware(req, res, next);
+  }
+  next();
+}, notificacaoController.contatarDiarista);
+
+// Demais rotas de notificação exigem autenticação prévia
 router.use(authMiddleware);
 
 // Listagem e resumo de não lidas

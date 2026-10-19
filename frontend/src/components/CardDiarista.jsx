@@ -1,9 +1,11 @@
 import React from 'react';
 import { Star, MapPin, Calendar, CheckCircle2, MessageCircle, Briefcase } from 'lucide-react';
 import Button from './Button';
+import api from '../services/api';
 
 export default function CardDiarista({ diarista, onVerAgenda }) {
   const {
+    id,
     nome,
     bairro,
     telefone,
@@ -32,6 +34,14 @@ export default function CardDiarista({ diarista, onVerAgenda }) {
 
   const handleWhatsApp = (e) => {
     e.stopPropagation();
+    if (id) {
+      api
+        .post('/notificacoes/contato-diarista', {
+          diarista_id: id,
+          mensagem_adicional: `Interesse em contratar diária via vitrine de profissionais.`
+        })
+        .catch(() => {});
+    }
     if (!telefone) return;
     const cleanPhone = telefone.replace(/\D/g, '');
     const mensagem = encodeURIComponent(
