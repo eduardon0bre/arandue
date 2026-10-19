@@ -100,7 +100,7 @@ async function authMiddleware(req, res, next) {
         id: Number(usuarioId),
         nome: tokenPayload.nome || `Usuário ${usuarioId}`,
         email: tokenPayload.email || `usuario_${usuarioId}@teste.local`,
-        telefone: tokenPayload.telefone || '11999998888',
+        telefone: tokenPayload.telefone || '',
         tipo: tokenPayload.role || tokenPayload.tipo || 'contratante',
         bairro: tokenPayload.bairro || 'Centro',
         status: 'ativo'

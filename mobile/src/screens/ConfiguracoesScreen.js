@@ -301,6 +301,8 @@ export default function ConfiguracoesScreen({ navigation }) {
                   placeholder="(11) 98888-7777"
                   placeholderTextColor="#94A3B8"
                   keyboardType="phone-pad"
+                  autoComplete="off"
+                  textContentType="none"
                 />
               </View>
             </View>

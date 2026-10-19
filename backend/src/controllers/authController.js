@@ -190,8 +190,8 @@ const authController = {
         });
       }
 
-      const telFinal = (telefone || '11999998888').trim();
-      const bairroFinal = (bairro || 'Centro').trim();
+      const telFinal = (telefone || '').trim();
+      const bairroFinal = (bairro || '').trim();
 
       const [resultado] = await db.query(
         `INSERT INTO usuarios (nome, email, telefone, tipo, bairro, status)
@@ -203,7 +203,9 @@ const authController = {
         id: resultado.insertId,
         name: nome.trim(),
         email: emailNormalizado,
-        role: tipoNormalizado
+        role: tipoNormalizado,
+        telefone: telFinal,
+        bairro: bairroFinal
       };
 
       res.cookie('auth_token', `sess_${resultado.insertId}_${Date.now()}`, {
@@ -455,10 +457,14 @@ const authController = {
         maxAge: 30 * 24 * 60 * 60 * 1000
       });
 
+      const telefoneLimpo =
+        usuario.telefone && String(usuario.telefone).trim() !== '11999998888'
+          ? String(usuario.telefone).trim()
+          : '';
+
       const cadastroIncompleto =
         isNewUser ||
-        !usuario.telefone ||
-        !String(usuario.telefone).trim() ||
+        !telefoneLimpo ||
         !usuario.bairro ||
         !String(usuario.bairro).trim();
 
@@ -470,7 +476,7 @@ const authController = {
         role: usuario.tipo,
         tipo: usuario.tipo,
         bairro: usuario.bairro || '',
-        telefone: usuario.telefone || '',
+        telefone: telefoneLimpo,
         avatar_url: usuario.avatar_url || null,
         cadastroIncompleto: cadastroIncompleto
       };

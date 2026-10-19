@@ -16,6 +16,7 @@ export default function FormInput({
   max,
   step,
   disabled = false,
+  autoComplete,
   className = ''
 }) {
   const inputId = id || name;
@@ -40,6 +41,7 @@ export default function FormInput({
           required={required}
           disabled={disabled}
           rows={rows}
+          autoComplete={autoComplete}
           className={`form-textarea ${error ? 'error' : ''}`}
         />
       ) : (
@@ -55,6 +57,7 @@ export default function FormInput({
           min={min}
           max={max}
           step={step}
+          autoComplete={autoComplete}
           className={`form-input ${error ? 'error' : ''}`}
         />
       )}
