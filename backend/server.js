@@ -15,8 +15,8 @@ async function startServer() {
       console.log(' Conexão com o banco de dados MySQL estabelecida com sucesso.');
     }
 
-    // Auto-criação de tabelas caso AUTO_INIT_DB seja habilitado
-    if (process.env.AUTO_INIT_DB === 'true') {
+    // Auto-criação/migração idempotente de tabelas no boot (desative com AUTO_INIT_DB=false)
+    if (process.env.AUTO_INIT_DB !== 'false') {
       try {
         const { init } = require('./src/scripts/initDb');
         await init();

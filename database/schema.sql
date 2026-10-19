@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   notif_whatsapp BOOLEAN DEFAULT TRUE,
   notif_email BOOLEAN DEFAULT TRUE,
   notif_push BOOLEAN DEFAULT TRUE,
+  push_token VARCHAR(255) NULL,
   data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -133,6 +134,26 @@ CREATE TABLE IF NOT EXISTS disponibilidades (
   INDEX idx_disponibilidades_data_status (data, status),
   CONSTRAINT fk_disponibilidades_diarista
     FOREIGN KEY (diarista_id) REFERENCES usuarios(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 7. Tabela: notificacoes (Central de Notificações Multi-Canal)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notificacoes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  tipo VARCHAR(50) NOT NULL DEFAULT 'sistema',
+  titulo VARCHAR(150) NOT NULL,
+  mensagem TEXT NOT NULL,
+  canais_enviados VARCHAR(100) NULL DEFAULT '',
+  lida BOOLEAN DEFAULT FALSE,
+  push_token VARCHAR(255) NULL,
+  data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_notificacoes_usuario (usuario_id, lida, data_criacao),
+  CONSTRAINT fk_notificacoes_usuario
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

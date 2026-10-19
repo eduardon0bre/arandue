@@ -1,6 +1,7 @@
 const candidaturaModel = require('../models/candidaturaModel');
 const demandaModel = require('../models/demandaModel');
 const usuarioModel = require('../models/usuarioModel');
+const notificationService = require('../services/notificationService');
 const { canApplyToJob } = require('../utils/permissions');
 
 const candidaturaController = {
@@ -76,6 +77,20 @@ const candidaturaController = {
         diarista_id,
         mensagem
       });
+
+      // Disparo assíncrono seguro de notificação para o contratante
+      try {
+        const nomeCandidato = candidato?.nome || 'Um trabalhador';
+        notificationService.dispararNotificacao({
+          usuario_id: demanda.contratante_id,
+          tipo: 'candidatura_recebida',
+          titulo: 'Nova candidatura recebida',
+          mensagem: `${nomeCandidato} se candidatou para a sua vaga "${demanda.titulo}".`,
+          metadata: { demanda_id, candidatura_id: novaCandidatura.id, diarista_id }
+        }).catch((notifErr) => console.warn('[Notificação candidatura_recebida]:', notifErr.message));
+      } catch (notifErr) {
+        console.warn('[Notificação candidatura_recebida]:', notifErr.message);
+      }
 
       return res.status(201).json({
         success: true,
@@ -163,6 +178,20 @@ const candidaturaController = {
         diarista_id,
         mensagem: mensagem || 'Tenho interesse nesta vaga.'
       });
+
+      // Disparo assíncrono seguro de notificação para o contratante
+      try {
+        const nomeCandidato = req.usuario?.nome || 'Um trabalhador';
+        notificationService.dispararNotificacao({
+          usuario_id: demanda.contratante_id,
+          tipo: 'candidatura_recebida',
+          titulo: 'Nova candidatura recebida',
+          mensagem: `${nomeCandidato} se candidatou para a sua vaga "${demanda.titulo}".`,
+          metadata: { demanda_id, candidatura_id: novaCandidatura.id, diarista_id }
+        }).catch((notifErr) => console.warn('[Notificação candidatura_recebida]:', notifErr.message));
+      } catch (notifErr) {
+        console.warn('[Notificação candidatura_recebida]:', notifErr.message);
+      }
 
       return res.status(201).json({
         success: true,
@@ -275,6 +304,20 @@ const candidaturaController = {
       // Ao recusar, apagar a candidatura do banco de dados
       if (status === 'recusada') {
         await candidaturaModel.delete(id);
+
+        // Disparo assíncrono seguro de notificação para o diarista
+        try {
+          notificationService.dispararNotificacao({
+            usuario_id: candidaturaExistente.diarista_id,
+            tipo: 'candidatura_recusada',
+            titulo: 'Atualização sobre sua candidatura',
+            mensagem: `Sua candidatura para a vaga "${candidaturaExistente.demanda_titulo || 'de diária'}" não foi selecionada desta vez. Novos bicos surgem a todo momento no Aranduê!`,
+            metadata: { demanda_id: candidaturaExistente.demanda_id, candidatura_id: Number(id) }
+          }).catch((notifErr) => console.warn('[Notificação candidatura_recusada]:', notifErr.message));
+        } catch (notifErr) {
+          console.warn('[Notificação candidatura_recusada]:', notifErr.message);
+        }
+
         return res.status(200).json({
           success: true,
           data: { id: Number(id), status: 'recusada', apagada: true },
@@ -297,6 +340,19 @@ const candidaturaController = {
       }
 
       const candidaturaAtualizada = await candidaturaModel.findById(id);
+
+      // Disparo assíncrono seguro de notificação para o diarista aprovado
+      try {
+        notificationService.dispararNotificacao({
+          usuario_id: candidaturaExistente.diarista_id,
+          tipo: 'candidatura_aceita',
+          titulo: 'Candidatura Aprovada!',
+          mensagem: `Parabéns! Sua candidatura para a vaga "${candidaturaExistente.demanda_titulo || 'de diária'}" foi aprovada. Acesse o aplicativo para combinar os detalhes com o contratante.`,
+          metadata: { demanda_id: candidaturaExistente.demanda_id, candidatura_id: Number(id) }
+        }).catch((notifErr) => console.warn('[Notificação candidatura_aceita]:', notifErr.message));
+      } catch (notifErr) {
+        console.warn('[Notificação candidatura_aceita]:', notifErr.message);
+      }
 
       return res.status(200).json({
         success: true,

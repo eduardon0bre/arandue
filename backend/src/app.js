@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const perfilRoutes = require('./routes/perfilRoutes');
 const disponibilidadeRoutes = require('./routes/disponibilidadeRoutes');
 const diaristaRoutes = require('./routes/diaristaRoutes');
+const notificacaoRoutes = require('./routes/notificacaoRoutes');
 const perfilController = require('./controllers/perfilController');
 const { authMiddleware } = require('./middlewares/authMiddleware');
 
@@ -74,6 +75,9 @@ app.use('/api/avaliacoes', avaliacaoRoutes);
 // Disponibilidade e Agenda de Diaristas
 app.use('/api/disponibilidades', disponibilidadeRoutes);
 app.use('/api/diaristas', diaristaRoutes);
+
+// Notificações Multi-Canal
+app.use('/api/notificacoes', notificacaoRoutes);
 
 // Tratamento de rotas inexistentes (404)
 app.use((req, res) => {

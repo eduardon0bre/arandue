@@ -1,4 +1,5 @@
 const avaliacaoModel = require('../models/avaliacaoModel');
+const notificationService = require('../services/notificationService');
 
 const avaliacaoController = {
   async criar(req, res) {
@@ -37,6 +38,19 @@ const avaliacaoController = {
         nota: notaNum,
         comentario: comentario ? String(comentario).trim() : null
       });
+
+      // Disparo assíncrono seguro de notificação para o usuário avaliado
+      try {
+        notificationService.dispararNotificacao({
+          usuario_id: Number(avaliado_id),
+          tipo: 'nova_avaliacao',
+          titulo: 'Você recebeu uma nova avaliação!',
+          mensagem: `Você recebeu uma avaliação de ${notaNum} estrela(s) no Aranduê. Acesse seu perfil para ver a reputação atualizada!`,
+          metadata: { demanda_id: Number(demanda_id), avaliador_id: Number(avaliador_id), nota: notaNum }
+        }).catch((notifErr) => console.warn('[Notificação nova_avaliacao]:', notifErr.message));
+      } catch (notifErr) {
+        console.warn('[Notificação nova_avaliacao]:', notifErr.message);
+      }
 
       return res.status(201).json({
         success: true,
