@@ -215,13 +215,28 @@ const DEFAULT_RECIPIENT_EMAIL = 'tramontina4040@gmail.com';
  */
 function resolverDestinatarioReal(to) {
   const destinoPadrao = process.env.EMAIL_DEFAULT_TO || DEFAULT_RECIPIENT_EMAIL;
+  if (!to) return destinoPadrao;
+  const lower = String(to).toLowerCase().trim();
+
+  // Preserva os dois e-mails reais principais (remetente/destinatário de produção)
+  if (lower === DEFAULT_SENDER_EMAIL || lower === DEFAULT_RECIPIENT_EMAIL) {
+    return lower;
+  }
+
   if (process.env.EMAIL_FORCE_DEFAULT_TO === 'true') {
     return destinoPadrao;
   }
-  if (!to) return destinoPadrao;
-  const lower = String(to).toLowerCase().trim();
-  const dominiosFicticios = ['@email.com', '@buffetsabor.com.br', '@arandue.com.br', '@exemplo.com', '@teste.com'];
-  if (dominiosFicticios.some((d) => lower.endsWith(d)) || lower === DEFAULT_SENDER_EMAIL) {
+
+  const dominiosFicticios = [
+    '@email.com',
+    '@buffetsabor.com.br',
+    '@logexpress.com.br',
+    '@silvareformas.com.br',
+    '@arandue.com.br',
+    '@exemplo.com',
+    '@teste.com'
+  ];
+  if (dominiosFicticios.some((d) => lower.endsWith(d))) {
     return destinoPadrao;
   }
   return to;
