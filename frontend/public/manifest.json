@@ -1,0 +1,43 @@
+{
+  "name": "Aranduê — Quadro de Diárias e Bicos",
+  "short_name": "Aranduê",
+  "description": "Plataforma de diárias e oportunidades de serviços autônomos",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quadro de Vagas",
+      "short_name": "Vagas",
+      "description": "Ver vagas e oportunidades de diárias e bicos",
+      "url": "/",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Buscar Diaristas",
+      "short_name": "Diaristas",
+      "description": "Encontrar profissionais diaristas e autônomos",
+      "url": "/diaristas",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Publicar Vaga",
+      "short_name": "Nova Vaga",
+      "description": "Cadastrar nova oportunidade de diária",
+      "url": "/demandas/nova",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    }
+  ]
+}

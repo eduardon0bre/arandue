@@ -16,6 +16,7 @@ import Login from './pages/Login';
 import CompletarCadastro from './pages/CompletarCadastro';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
+import InstallPwaBanner from './components/InstallPwaBanner';
 
 function AppRoutes() {
   return (
@@ -126,6 +127,7 @@ function AppRoutes() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <InstallPwaBanner />
       <Footer />
     </div>
   );
