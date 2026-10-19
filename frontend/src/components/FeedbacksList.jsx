@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, MessageSquare, Briefcase, Calendar, UserCheck, ShieldCheck } from 'lucide-react';
+import { Star, Briefcase, Calendar, ShieldCheck } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import api from '../services/api';
 
@@ -9,14 +9,13 @@ export default function FeedbacksList({
   titulo = 'Feedbacks e Avaliações Recebidas',
   tipoPapel = 'diarista'
 }) {
-  const [feedbacks, setFeedbacks] = useState(feedbacksProp || []);
+  const [feedbacksApi, setFeedbacksApi] = useState([]);
   const [carregando, setCarregando] = useState(Boolean(!feedbacksProp && usuarioId));
 
+  const feedbacks = feedbacksProp !== undefined ? feedbacksProp : feedbacksApi;
+
   useEffect(() => {
-    if (feedbacksProp) {
-      setFeedbacks(feedbacksProp);
-      return;
-    }
+    if (feedbacksProp !== undefined) return;
 
     let montado = true;
     async function carregarFeedbacks() {
@@ -25,7 +24,7 @@ export default function FeedbacksList({
         setCarregando(true);
         const response = await api.get(`/avaliacoes/usuario/${usuarioId}`);
         if (montado && response.data?.success) {
-          setFeedbacks(response.data.data || []);
+          setFeedbacksApi(response.data.data || []);
         }
       } catch (err) {
         console.error('Erro ao carregar feedbacks:', err);
