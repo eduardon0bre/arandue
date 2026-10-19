@@ -12,10 +12,12 @@ export default function Configuracoes() {
   const navigate = useNavigate();
   const { usuarioAtual, atualizarPapel, atualizarPerfil, logout, excluirConta } = useUser();
 
+  const limparTelefonePadrao = (tel) => (tel && tel !== '11999998888' ? tel : '');
+
   const [form, setForm] = useState({
     nome: usuarioAtual?.nome || '',
     email: usuarioAtual?.email || '',
-    telefone: usuarioAtual?.telefone || '',
+    telefone: limparTelefonePadrao(usuarioAtual?.telefone),
     bairro: usuarioAtual?.bairro || '',
     tipo: usuarioAtual?.tipo || 'contratante',
     notif_whatsapp: true,
@@ -49,7 +51,7 @@ export default function Configuracoes() {
           const estado = {
             nome: dados.nome || '',
             email: dados.email || '',
-            telefone: dados.telefone || '',
+            telefone: limparTelefonePadrao(dados.telefone),
             bairro: dados.bairro || '',
             tipo: dados.tipo || 'contratante',
             notif_whatsapp: Boolean(dados.notif_whatsapp !== false && dados.notif_whatsapp !== 0),
@@ -68,7 +70,7 @@ export default function Configuracoes() {
         const estado = {
           nome: usuarioAtual.nome || '',
           email: usuarioAtual.email || '',
-          telefone: usuarioAtual.telefone || '',
+          telefone: limparTelefonePadrao(usuarioAtual.telefone),
           bairro: usuarioAtual.bairro || '',
           tipo: usuarioAtual.tipo || 'contratante',
           notif_whatsapp: true,
@@ -353,6 +355,7 @@ export default function Configuracoes() {
               value={form.telefone}
               onChange={handleChange}
               placeholder="(11) 98888-7777"
+              autoComplete="off"
               required
               error={erros.telefone}
             />

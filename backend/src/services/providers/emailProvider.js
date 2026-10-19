@@ -209,26 +209,33 @@ const DEFAULT_SENDER_EMAIL = 'tramontina9299@gmail.com';
 const DEFAULT_RECIPIENT_EMAIL = 'tramontina4040@gmail.com';
 
 /**
- * Resolve o destinatário real para envio acadêmico/produção:
- * Se o e-mail do perfil for fictício do seed (@email.com, @buffetsabor.com.br, etc.)
- * ou se EMAIL_FORCE_TO estiver ativo, direciona para tramontina4040@gmail.com.
+ * Resolve o destinatário real:
+ * Envia diretamente para o e-mail do destinatário cadastrado no banco.
+ * Apenas caso o perfil seja fictício do seed inicial (@email.com, @buffetsabor.com.br, etc.),
+ * direciona para o e-mail padrão de fallback para evitar bounce.
  */
 function resolverDestinatarioReal(to) {
   const destinoPadrao = process.env.EMAIL_DEFAULT_TO || DEFAULT_RECIPIENT_EMAIL;
-  if (process.env.EMAIL_FORCE_DEFAULT_TO === 'true') {
-    return destinoPadrao;
-  }
   if (!to) return destinoPadrao;
   const lower = String(to).toLowerCase().trim();
-  const dominiosFicticios = ['@email.com', '@buffetsabor.com.br', '@arandue.com.br', '@exemplo.com', '@teste.com'];
-  if (dominiosFicticios.some((d) => lower.endsWith(d)) || lower === DEFAULT_SENDER_EMAIL) {
+
+  const dominiosFicticios = [
+    '@email.com',
+    '@buffetsabor.com.br',
+    '@logexpress.com.br',
+    '@silvareformas.com.br',
+    '@arandue.com.br',
+    '@exemplo.com',
+    '@teste.com'
+  ];
+  if (dominiosFicticios.some((d) => lower.endsWith(d))) {
     return destinoPadrao;
   }
-  return to;
+  return lower;
 }
 
 async function sendNodemailerSmtp({ from, to, subject, html }) {
-  const smtpUser = process.env.SMTP_USER || DEFAULT_SENDER_EMAIL;
+  const smtpUser = DEFAULT_SENDER_EMAIL;
   const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
   const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
   const smtpPort = Number(process.env.SMTP_PORT || 465);
@@ -239,9 +246,9 @@ async function sendNodemailerSmtp({ from, to, subject, html }) {
     port: smtpPort,
     secure,
     family: 4,
-    connectionTimeout: 3500,
-    greetingTimeout: 3500,
-    socketTimeout: 5000,
+    connectionTimeout: 2500,
+    greetingTimeout: 2500,
+    socketTimeout: 4000,
     auth: {
       user: smtpUser,
       pass: smtpPass
@@ -266,6 +273,30 @@ async function sendNodemailerSmtp({ from, to, subject, html }) {
       messageId: info.messageId
     };
   } catch (smtpErr) {
+    // Fallback HTTPS Relay (contorna bloqueio de porta 465 do Railway enviando via HTTPS 443)
+    const relayUrl = process.env.EMAIL_RELAY_URL || 'https://arandue-projeto-final.vercel.app/api/email-relay';
+    try {
+      const relayRes = await fetch(relayUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ smtpUser, smtpPass, from, to, subject, html })
+      });
+      const relayData = await relayRes.json().catch(() => ({}));
+      if (relayRes.ok && relayData.success) {
+        console.log(`📧 [Gmail HTTPS Relay] Enviado de ${smtpUser} para ${to} | MessageID: ${relayData.messageId}`);
+        return {
+          success: true,
+          simulated: false,
+          provider: 'nodemailer-gmail',
+          from: smtpUser,
+          deliveredTo: to,
+          messageId: relayData.messageId
+        };
+      }
+    } catch {
+      // prossegue para fallback seguro se relay estiver indisponível
+    }
+
     console.warn(
       `⚠️ [Nodemailer] Porta SMTP (${smtpPort}) bloqueada no ambiente em nuvem (${smtpErr.message}). Registrando disparo de ${smtpUser} para ${to}.`
     );
@@ -320,8 +351,8 @@ async function sendNodemailerEthereal({ from, to, subject, html }) {
 
 const emailProvider = {
   /**
-   * Envia e-mail formatado para o destinatário usando Nodemailer (Gmail SMTP), Resend, SendGrid ou Simulação.
-   * Configurado por padrão para enviar de tramontina9299@gmail.com para tramontina4040@gmail.com.
+   * Envia e-mail formatado a partir do e-mail oficial da plataforma (tramontina9299@gmail.com)
+   * diretamente para o e-mail do destinatário.
    * @param {Object} params
    * @param {string} params.to - Endereço de e-mail do destinatário
    * @param {string} params.subject - Assunto do e-mail
@@ -330,13 +361,17 @@ const emailProvider = {
    */
   async sendEmail({ to, subject, message, destinatarioNome }) {
     const provider = (process.env.EMAIL_PROVIDER || 'gmail').toLowerCase();
-    const smtpUser = process.env.SMTP_USER || DEFAULT_SENDER_EMAIL;
+    const smtpUser = DEFAULT_SENDER_EMAIL;
     const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
-    const from = process.env.EMAIL_FROM || `Aranduê <${smtpUser}>`;
+    const from = `Aranduê <${smtpUser}>`;
     const destinatarioReal = resolverDestinatarioReal(to);
+    const mensagemFormatada =
+      to && String(to).toLowerCase().trim() !== destinatarioReal
+        ? `${message}\n\n[Destinatário do perfil: ${destinatarioNome || 'Usuário'} (${to})]`
+        : message;
     const html = buildEmailHtml({
       titulo: subject,
-      mensagem: `${message}\n\n[Destinatário do perfil: ${destinatarioNome || 'Usuário'} (${to || destinatarioReal})]`,
+      mensagem: mensagemFormatada,
       destinatarioNome
     });
 

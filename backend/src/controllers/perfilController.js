@@ -64,9 +64,14 @@ const perfilController = {
         });
       }
 
+      const dados = {
+        ...rows[0],
+        telefone: rows[0].telefone === '11999998888' ? '' : (rows[0].telefone || '')
+      };
+
       return res.status(200).json({
         success: true,
-        data: rows[0]
+        data: dados
       });
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);

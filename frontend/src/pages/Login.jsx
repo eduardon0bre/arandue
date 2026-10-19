@@ -60,9 +60,16 @@ export default function Login() {
 
   // Callback de sucesso com o Google
   const handleGoogleSuccess = (usuarioRetornado, responseData) => {
+    const telefoneUsuario =
+      usuarioRetornado?.telefone && String(usuarioRetornado.telefone).trim() !== '11999998888'
+        ? String(usuarioRetornado.telefone).trim()
+        : '';
+
     if (usuarioRetornado?.id) {
       const perfilEncontrado = perfisDisponiveis?.find(
-        (p) => p.id === Number(usuarioRetornado.id)
+        (p) =>
+          p.id === Number(usuarioRetornado.id) &&
+          p.email?.toLowerCase() === usuarioRetornado.email?.toLowerCase()
       );
       if (perfilEncontrado) {
         trocarUsuario(usuarioRetornado.id);
@@ -73,12 +80,12 @@ export default function Login() {
           email: usuarioRetornado.email,
           tipo: usuarioRetornado.role || usuarioRetornado.tipo || 'contratante',
           bairro: usuarioRetornado.bairro || '',
-          telefone: usuarioRetornado.telefone || '',
+          telefone: telefoneUsuario,
           avatar_url: usuarioRetornado.avatar_url || null,
           cadastroIncompleto: Boolean(
             responseData?.cadastroIncompleto ||
             responseData?.isNewUser ||
-            !usuarioRetornado.telefone ||
+            !telefoneUsuario ||
             !usuarioRetornado.bairro
           )
         });
@@ -89,8 +96,7 @@ export default function Login() {
       responseData?.cadastroIncompleto ||
       responseData?.isNewUser ||
       usuarioRetornado?.cadastroIncompleto ||
-      !usuarioRetornado.telefone ||
-      !String(usuarioRetornado.telefone).trim() ||
+      !telefoneUsuario ||
       !usuarioRetornado.bairro ||
       !String(usuarioRetornado.bairro).trim()
     );
@@ -210,7 +216,9 @@ export default function Login() {
         // Atualiza perfil ativo no UserContext
         if (usuarioRetornado?.id) {
           const perfilEncontrado = perfisDisponiveis?.find(
-            (p) => p.id === Number(usuarioRetornado.id)
+            (p) =>
+              p.id === Number(usuarioRetornado.id) &&
+              p.email?.toLowerCase() === usuarioRetornado.email?.toLowerCase()
           );
           if (perfilEncontrado) {
             trocarUsuario(usuarioRetornado.id);
@@ -220,7 +228,7 @@ export default function Login() {
               nome: usuarioRetornado.name || usuarioRetornado.nome,
               email: usuarioRetornado.email,
               tipo: usuarioRetornado.role || usuarioRetornado.tipo || 'contratante',
-              bairro: usuarioRetornado.bairro || 'Centro'
+              bairro: usuarioRetornado.bairro || ''
             });
           }
         }

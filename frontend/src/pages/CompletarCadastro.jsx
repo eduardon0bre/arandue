@@ -13,7 +13,7 @@ export default function CompletarCadastro() {
     nome: usuarioAtual?.nome || usuarioAtual?.name || '',
     email: usuarioAtual?.email || '',
     tipo: usuarioAtual?.tipo || usuarioAtual?.role || 'contratante',
-    telefone: usuarioAtual?.telefone || '',
+    telefone: '',
     bairro: usuarioAtual?.bairro || ''
   });
 
@@ -22,17 +22,8 @@ export default function CompletarCadastro() {
   const [alertaErro, setAlertaErro] = useState(null);
   const [alertaSucesso, setAlertaSucesso] = useState(null);
 
-  const formatarTelefone = (valor) => {
-    const limpo = valor.replace(/\D/g, '').slice(0, 11);
-    if (limpo.length <= 10) {
-      return limpo.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
-    }
-    return limpo.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
-  };
-
   const handleTelefoneChange = (e) => {
-    const formatado = formatarTelefone(e.target.value);
-    setForm((prev) => ({ ...prev, telefone: formatado }));
+    setForm((prev) => ({ ...prev, telefone: e.target.value }));
     if (erros.telefone) {
       setErros((prev) => ({ ...prev, telefone: null }));
     }
@@ -224,6 +215,7 @@ export default function CompletarCadastro() {
               id="comp-telefone"
               name="telefone"
               type="tel"
+              autoComplete="off"
               value={form.telefone}
               onChange={handleTelefoneChange}
               placeholder="(11) 99999-8888"
