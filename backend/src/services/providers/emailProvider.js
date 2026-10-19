@@ -274,7 +274,7 @@ async function sendNodemailerSmtp({ from, to, subject, html }) {
     };
   } catch (smtpErr) {
     // Fallback HTTPS Relay (contorna bloqueio de porta 465 do Railway enviando via HTTPS 443)
-    const relayUrl = process.env.EMAIL_RELAY_URL || 'https://arandue-projeto-final.vercel.app/api/email-relay';
+    const relayUrl = process.env.EMAIL_RELAY_URL || 'https://frontend-murex-one-99.vercel.app/api/email-relay';
     try {
       const relayRes = await fetch(relayUrl, {
         method: 'POST',
