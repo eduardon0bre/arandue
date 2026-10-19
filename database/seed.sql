@@ -13,6 +13,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE avaliacoes;
 TRUNCATE TABLE candidaturas;
 TRUNCATE TABLE demandas;
+TRUNCATE TABLE disponibilidades;
 TRUNCATE TABLE usuarios;
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -69,4 +70,23 @@ INSERT INTO curriculos (usuario_id, foto_url, bio, experiencia, servicos, regioe
 INSERT INTO avaliacoes (demanda_id, avaliador_id, avaliado_id, nota, comentario) VALUES
 (2, 2, 6, 5, 'Excelente postura, muito pontual e eficiente no descarregamento das mercadorias.'),
 (2, 6, 2, 5, 'Galpão organizado, equipe prestativa e pagamento realizado imediatamente ao final do expediente.');
+
+-- --------------------------------------------------------
+-- Inserção de Disponibilidades de Agenda dos Diaristas
+-- --------------------------------------------------------
+INSERT INTO disponibilidades (diarista_id, data, hora_inicio, hora_fim, status, observacao) VALUES
+(4, '2026-10-20', '08:00:00', '12:00:00', 'disponivel', 'Período da manhã'),
+(4, '2026-10-20', '13:00:00', '17:00:00', 'disponivel', 'Período da tarde'),
+(4, '2026-10-22', '08:00:00', '17:00:00', 'disponivel', 'Dia inteiro disponível'),
+(4, '2026-10-23', '08:00:00', '14:00:00', 'disponivel', 'Disponível até o início da tarde'),
+(5, '2026-10-21', '09:00:00', '15:00:00', 'disponivel', 'Atendimento para buffets e eventos'),
+(5, '2026-10-22', '14:00:00', '22:00:00', 'disponivel', 'Disponibilidade para eventos noturnos'),
+(5, '2026-10-24', '10:00:00', '18:00:00', 'disponivel', 'Sábado integral'),
+(6, '2026-10-21', '07:00:00', '16:00:00', 'disponivel', 'Carga e descarga / logística'),
+(6, '2026-10-23', '08:00:00', '17:00:00', 'disponivel', 'Dia completo'),
+(7, '2026-10-20', '08:30:00', '17:30:00', 'disponivel', 'Pinturas e reparos residenciais'),
+(7, '2026-10-21', '08:30:00', '17:30:00', 'disponivel', 'Pinturas e acabamento'),
+(7, '2026-10-25', '09:00:00', '14:00:00', 'disponivel', 'Reparos rápidos de domingo'),
+(8, '2026-10-20', '08:00:00', '16:00:00', 'disponivel', 'Organização e limpeza residencial'),
+(8, '2026-10-22', '08:00:00', '16:00:00', 'disponivel', 'Disponível para diária completa');
 

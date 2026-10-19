@@ -16,9 +16,11 @@ CREATE TABLE IF NOT EXISTS usuarios (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(100) NOT NULL,
   email VARCHAR(150) NOT NULL UNIQUE,
-  telefone VARCHAR(20) NOT NULL,
-  tipo ENUM('contratante', 'diarista', 'ambos') NOT NULL,
-  bairro VARCHAR(100) NOT NULL,
+  google_id VARCHAR(255) UNIQUE NULL,
+  avatar_url VARCHAR(255) NULL,
+  telefone VARCHAR(20) NULL DEFAULT '',
+  tipo ENUM('contratante', 'diarista', 'ambos') NOT NULL DEFAULT 'contratante',
+  bairro VARCHAR(100) NULL DEFAULT '',
   status ENUM('ativo', 'inativo') NOT NULL DEFAULT 'ativo',
   notif_whatsapp BOOLEAN DEFAULT TRUE,
   notif_email BOOLEAN DEFAULT TRUE,
@@ -40,6 +42,8 @@ CREATE TABLE IF NOT EXISTS demandas (
   bairro VARCHAR(100) NOT NULL,
   status ENUM('aberta', 'preenchida', 'concluida', 'cancelada') NOT NULL DEFAULT 'aberta',
   data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_demandas_status_data (status, data_servico),
+  INDEX idx_demandas_categoria (categoria),
   CONSTRAINT fk_demandas_contratante
     FOREIGN KEY (contratante_id) REFERENCES usuarios(id)
     ON DELETE CASCADE
@@ -56,6 +60,7 @@ CREATE TABLE IF NOT EXISTS candidaturas (
   status ENUM('pendente', 'aceita', 'recusada') NOT NULL DEFAULT 'pendente',
   mensagem TEXT NULL,
   data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_candidaturas_diarista_status (diarista_id, status),
   CONSTRAINT uq_candidatura_demanda_diarista UNIQUE (demanda_id, diarista_id),
   CONSTRAINT fk_candidaturas_demanda
     FOREIGN KEY (demanda_id) REFERENCES demandas(id)
@@ -111,3 +116,24 @@ CREATE TABLE IF NOT EXISTS curriculos (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- 6. Tabela: disponibilidades (Agenda e horários disponíveis dos diaristas)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS disponibilidades (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  diarista_id INT NOT NULL,
+  data DATE NOT NULL,
+  hora_inicio TIME NOT NULL,
+  hora_fim TIME NOT NULL,
+  status ENUM('disponivel', 'ocupado', 'indisponivel') NOT NULL DEFAULT 'disponivel',
+  observacao VARCHAR(255) NULL,
+  data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_disponibilidades_diarista_data (diarista_id, data),
+  INDEX idx_disponibilidades_data_status (data, status),
+  CONSTRAINT fk_disponibilidades_diarista
+    FOREIGN KEY (diarista_id) REFERENCES usuarios(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
