@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "apk": "VITE_API_URL=https://backend-production-8ba16.up.railway.app/api vite build && npx cap sync android && JAVA_HOME=/home/eduardo/.android-sdk/jdk-21 ANDROID_HOME=/home/eduardo/.android-sdk ./android/gradlew -p android assembleRelease && cp android/app/build/outputs/apk/release/app-release.apk ../arandue.apk && cp android/app/build/outputs/apk/release/app-release.apk /home/eduardo/Downloads/arandue.apk"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

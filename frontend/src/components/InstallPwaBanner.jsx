@@ -18,7 +18,8 @@ export default function InstallPwaBanner() {
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true ||
-      document.referrer.includes('android-app://');
+      document.referrer.includes('android-app://') ||
+      Boolean(window.Capacitor?.isNativePlatform?.());
 
     if (isStandalone) {
       return;
