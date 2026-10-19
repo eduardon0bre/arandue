@@ -40,6 +40,9 @@ export default function Navbar() {
   const podeCriarVaga =
     estaAutenticado && (usuarioAtual?.tipo === 'contratante' || usuarioAtual?.tipo === 'ambos');
 
+  // Visibilidade de Buscar Diaristas: restrita a Contratante, Ambos e visitantes (não exibida para Diarista)
+  const podeBuscarDiaristas = !estaAutenticado || usuarioAtual?.tipo !== 'diarista';
+
   return (
     <header className="navbar">
       <div className="container navbar-container">
@@ -58,7 +61,7 @@ export default function Navbar() {
             >
               <Briefcase size={20} />
             </span>
-            <span>Quadro de Diárias</span>
+            <span className="navbar-brand-text">Quadro de Diárias</span>
           </div>
         </Link>
 
@@ -84,15 +87,17 @@ export default function Navbar() {
             <span>Vagas Disponíveis</span>
           </NavLink>
 
-          {/* Buscar Diaristas e Profissionais Disponíveis */}
-          <NavLink
-            to="/diaristas"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={fecharMenuMobile}
-          >
-            <Users size={17} />
-            <span>Buscar Diaristas</span>
-          </NavLink>
+          {/* Buscar Diaristas e Profissionais Disponíveis (Oculto para Diarista) */}
+          {podeBuscarDiaristas && (
+            <NavLink
+              to="/diaristas"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={fecharMenuMobile}
+            >
+              <Users size={17} />
+              <span>Buscar Diaristas</span>
+            </NavLink>
+          )}
 
           {/* Criar Vaga (visível no menu caso tenha permissão) */}
           {podeCriarVaga && (
@@ -156,9 +161,10 @@ export default function Navbar() {
 
           {/* Menu do Usuário Autenticado (Dropdown conforme Wireframe 4.1) */}
           {estaAutenticado && (
-            <div style={{ position: 'relative' }}>
+            <div className="user-menu-wrapper">
               <button
                 type="button"
+                className="user-menu-btn"
                 onClick={() => setUserDropdownAberto(!userDropdownAberto)}
                 style={{
                   display: 'flex',
@@ -190,40 +196,14 @@ export default function Navbar() {
                 >
                   {usuarioAtual?.nome?.charAt(0) || 'U'}
                 </div>
-                <span style={{ fontWeight: 600, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {usuarioAtual?.nome?.split(' ')[0]}
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    backgroundColor: 'var(--primary-light)',
-                    color: 'var(--primary)',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: '4px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase'
-                  }}
-                >
-                  {usuarioAtual?.tipo}
                 </span>
                 <ChevronDown size={14} color="var(--text-muted)" />
               </button>
 
               {userDropdownAberto && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    right: 0,
-                    backgroundColor: '#ffffff',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: 'var(--shadow-md)',
-                    minWidth: '200px',
-                    padding: '0.5rem 0',
-                    zIndex: 50
-                  }}
-                >
+                <div className="user-menu-dropdown">
                   <div style={{ padding: '0.5rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{usuarioAtual?.nome}</div>
                     <div style={{ color: 'var(--text-muted)' }}>{usuarioAtual?.email}</div>

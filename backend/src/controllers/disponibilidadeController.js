@@ -36,9 +36,11 @@ const disponibilidadeController = {
   async criar(req, res) {
     try {
       const diaristaId = req.usuario.id;
-      const { data, hora_inicio, hora_fim, observacao, status } = req.body;
+      const { data, datas, hora_inicio, hora_fim, observacao, status } = req.body;
 
-      if (!data || !hora_inicio || !hora_fim) {
+      const listaDatas = Array.isArray(datas) && datas.length > 0 ? datas : (data ? [data] : []);
+
+      if (listaDatas.length === 0 || !hora_inicio || !hora_fim) {
         return res.status(400).json({
           success: false,
           message: 'Data, hora de início e hora de término são campos obrigatórios.'
@@ -47,11 +49,13 @@ const disponibilidadeController = {
 
       // Validação simples de formato de data YYYY-MM-DD
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(data)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Data em formato inválido. Utilize o formato AAAA-MM-DD.'
-        });
+      for (const d of listaDatas) {
+        if (!dateRegex.test(d)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Data em formato inválido. Utilize o formato AAAA-MM-DD.'
+          });
+        }
       }
 
       // Validação de horário HH:MM ou HH:MM:SS
@@ -74,19 +78,41 @@ const disponibilidadeController = {
         });
       }
 
-      const novaDisponibilidade = await disponibilidadeModel.create({
-        diarista_id: diaristaId,
-        data,
-        hora_inicio: inicioNorm,
-        hora_fim: fimNorm,
-        status: status || 'disponivel',
-        observacao: observacao ? String(observacao).trim() : ''
-      });
+      if (listaDatas.length === 1) {
+        const novaDisponibilidade = await disponibilidadeModel.create({
+          diarista_id: diaristaId,
+          data: listaDatas[0],
+          hora_inicio: inicioNorm,
+          hora_fim: fimNorm,
+          status: status || 'disponivel',
+          observacao: observacao ? String(observacao).trim() : ''
+        });
+
+        return res.status(201).json({
+          success: true,
+          data: novaDisponibilidade,
+          message: 'Horário de disponibilidade cadastrado com sucesso.'
+        });
+      }
+
+      // Cadastro em lote (múltiplas datas)
+      const criados = [];
+      for (const d of listaDatas) {
+        const item = await disponibilidadeModel.create({
+          diarista_id: diaristaId,
+          data: d,
+          hora_inicio: inicioNorm,
+          hora_fim: fimNorm,
+          status: status || 'disponivel',
+          observacao: observacao ? String(observacao).trim() : ''
+        });
+        criados.push(item);
+      }
 
       return res.status(201).json({
         success: true,
-        data: novaDisponibilidade,
-        message: 'Horário de disponibilidade cadastrado com sucesso.'
+        data: criados,
+        message: `${criados.length} horários cadastrados com sucesso.`
       });
     } catch (error) {
       console.error('Erro ao cadastrar disponibilidade:', error);

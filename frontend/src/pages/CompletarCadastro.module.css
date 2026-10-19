@@ -209,3 +209,22 @@
     transform: rotate(360deg);
   }
 }
+
+@media (max-width: 480px) {
+  .container {
+    padding: 1rem 0.5rem;
+  }
+
+  .card {
+    padding: 1.5rem 1rem;
+    border-radius: var(--radius-md, 10px);
+  }
+
+  .roleGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .input {
+    font-size: 16px;
+  }
+}

@@ -400,7 +400,7 @@ export default function PainelContratante() {
           >
             <span>
               Gerenciamento de serviços e oportunidades para o perfil{' '}
-              <strong>{usuarioAtual?.nome}</strong> ({usuarioAtual?.tipo}).
+              <strong>{usuarioAtual?.nome}</strong>.
             </span>
             <span
               style={{
@@ -439,24 +439,15 @@ export default function PainelContratante() {
       </div>
 
       {alerta && (
-        <Alert type={alerta.type} message={alerta.message} onClose={() => setAlerta(null)} />
+        <Alert popup type={alerta.type} message={alerta.message} onClose={() => setAlerta(null)} />
       )}
 
       {/* Abas de Navegação do Painel */}
-      <div
-        style={{
-          display: 'flex',
-          backgroundColor: 'var(--bg-subtle)',
-          border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)',
-          padding: '4px',
-          marginBottom: '1.75rem',
-          gap: '4px'
-        }}
-      >
+      <div className="panel-tabs">
         {(isContratanteExclusivo || isAmbos) && (
           <button
             type="button"
+            className="panel-tab-btn"
             onClick={() => setAbaAtiva('vagas')}
             style={{
               flex: 1,
@@ -484,6 +475,7 @@ export default function PainelContratante() {
         {(isDiaristaExclusivo || isAmbos) && (
           <button
             type="button"
+            className="panel-tab-btn"
             onClick={() => setAbaAtiva('candidaturas')}
             style={{
               flex: 1,
@@ -510,6 +502,7 @@ export default function PainelContratante() {
 
         <button
           type="button"
+          className="panel-tab-btn"
           onClick={() => setAbaAtiva('feedbacks')}
           style={{
             flex: 1,

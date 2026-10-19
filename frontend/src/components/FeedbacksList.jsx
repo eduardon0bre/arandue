@@ -111,18 +111,7 @@ export default function FeedbacksList({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {/* Painel Visual de Cálculo e Distribuição de Média */}
-          <div
-            style={{
-              backgroundColor: 'var(--bg-subtle)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              padding: '1.25rem',
-              display: 'grid',
-              gridTemplateColumns: 'minmax(130px, 1fr) 2fr',
-              gap: '1.5rem',
-              alignItems: 'center'
-            }}
-          >
+          <div className="feedbacks-summary-grid">
             {/* Lado Esquerdo: Média Grande e Estrelas */}
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem' }}>
               <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>

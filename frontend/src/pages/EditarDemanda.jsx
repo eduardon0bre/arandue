@@ -181,11 +181,10 @@ export default function EditarDemanda() {
         </Link>
       </div>
 
-      <div style={{
+      <div className="responsive-card" style={{
         backgroundColor: '#ffffff',
         border: '1px solid var(--border-color)',
         borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
         boxShadow: 'var(--shadow-sm)'
       }}>
         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
@@ -200,13 +199,13 @@ export default function EditarDemanda() {
         </div>
 
         {sucesso && (
-          <Alert type="success" title="Vaga atualizada com sucesso!">
+          <Alert popup type="success" title="Vaga atualizada com sucesso!">
             Redirecionando para o seu painel...
           </Alert>
         )}
 
         {mensagemErro && (
-          <Alert type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
+          <Alert popup type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
         )}
 
         <form onSubmit={handleSubmit}>
@@ -296,7 +295,7 @@ export default function EditarDemanda() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
             <Button
               type="button"
               variant="outline"

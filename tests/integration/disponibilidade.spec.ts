@@ -75,6 +75,29 @@ describe('Integration Tests: Agenda e Calendário de Disponibilidade dos Diarist
       expect(mockSlots.some((s) => s.data === '2026-10-25')).toBe(true);
     });
 
+    it('deve permitir que o diarista cadastre múltiplos dias de disponibilidade em lote', async () => {
+      const payload = {
+        datas: ['2026-10-26', '2026-10-27'],
+        hora_inicio: '08:00',
+        hora_fim: '17:00',
+        observacao: 'Disponível dia todo'
+      };
+
+      const response = await request(app)
+        .post('/api/disponibilidades')
+        .set('Authorization', `Bearer ${tokenDiarista}`)
+        .send(payload);
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBe(2);
+
+      const mockSlots = getMockDisponibilidades();
+      expect(mockSlots.some((s) => s.data === '2026-10-26')).toBe(true);
+      expect(mockSlots.some((s) => s.data === '2026-10-27')).toBe(true);
+    });
+
     it('deve rejeitar cadastro com hora de término menor ou igual à hora de início', async () => {
       const payload = {
         data: '2026-10-25',

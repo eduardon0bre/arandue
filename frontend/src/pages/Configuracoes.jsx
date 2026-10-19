@@ -151,7 +151,7 @@ export default function Configuracoes() {
       });
 
       setDadosIniciais({ ...form });
-      setMensagemSucesso('Configurações salvas com sucesso! Suas permissões foram atualizadas.');
+      navigate('/', { state: { mensagem: 'Configurações salvas com sucesso!' } });
     } catch (err) {
       setMensagemErro(err.response?.data?.message || err.message || 'Erro ao salvar alterações.');
     } finally {
@@ -199,25 +199,16 @@ export default function Configuracoes() {
       </header>
 
       {mensagemSucesso && (
-        <Alert type="success" message={mensagemSucesso} onClose={() => setMensagemSucesso(null)} />
+        <Alert popup type="success" message={mensagemSucesso} onClose={() => setMensagemSucesso(null)} />
       )}
 
       {mensagemErro && (
-        <Alert type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
+        <Alert popup type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
       )}
 
       <form onSubmit={handleSalvarPerfil}>
         {/* Seção 1: Dados Pessoais e Papel da Conta (RF-01, RF-02) */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            marginBottom: '1.5rem',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
+        <div className="responsive-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
             <User size={20} color="var(--primary)" />
             <h2 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>
@@ -229,7 +220,7 @@ export default function Configuracoes() {
             <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
               Papel Ativo na Plataforma (RBAC) <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '0.75rem' }}>
               <div
                 onClick={() => setForm((p) => ({ ...p, tipo: 'contratante' }))}
                 style={{
@@ -289,7 +280,7 @@ export default function Configuracoes() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '1rem' }}>
             <FormInput
               label="Nome Completo"
               name="nome"
@@ -331,16 +322,7 @@ export default function Configuracoes() {
         </div>
 
         {/* Seção 2: Preferências de Notificação (RF-10) */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            marginBottom: '1.5rem',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
+        <div className="responsive-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
             <Bell size={20} color="var(--primary)" />
             <h2 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>
@@ -395,7 +377,7 @@ export default function Configuracoes() {
               />
               <div>
                 <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                  Notificações no Navegador (Push)
+                  Notificações no Navegador
                 </span>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   Alertas em tempo real quando você estiver com a página aberta.
@@ -407,7 +389,7 @@ export default function Configuracoes() {
 
         {/* Botão de Salvar Alterações (só aparece quando houver alteração) */}
         {(temAlteracao || salvando) && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
             <Button
               type="button"
               variant="outline"
@@ -429,13 +411,8 @@ export default function Configuracoes() {
 
       {/* Seção 3: Sessão da Conta (RF-11) */}
       <div
+        className="responsive-card"
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '1.75rem 2rem',
-          marginBottom: '1.5rem',
-          boxShadow: 'var(--shadow-sm)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -462,7 +439,7 @@ export default function Configuracoes() {
           backgroundColor: 'var(--danger-light)',
           border: '1px solid var(--danger-border)',
           borderRadius: 'var(--radius-lg)',
-          padding: '1.75rem 2rem',
+          padding: '1.25rem 1rem',
           boxShadow: 'var(--shadow-sm)',
           display: 'flex',
           alignItems: 'center',
@@ -498,7 +475,7 @@ export default function Configuracoes() {
         onClose={() => setModalExclusaoAberta(false)}
         title="Excluir Conta Definitivamente"
         footer={
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%', flexWrap: 'wrap' }}>
             <Button
               variant="outline"
               onClick={() => setModalExclusaoAberta(false)}

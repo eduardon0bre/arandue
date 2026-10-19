@@ -46,7 +46,7 @@ export default function ModalCandidatosDemanda({
                 gap: '0.75rem'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
                   <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
                     {cand.diarista_nome}
