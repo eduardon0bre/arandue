@@ -1,6 +1,6 @@
 /**
  * Provedor Plugável de Notificações WhatsApp
- * Suporte à biblioteca oficial `twilio`, CallMeBot (API gratuita para projetos acadêmicos), Z-API ou Simulação.
+ * Suporte à biblioteca oficial `twilio`, Meta WhatsApp Cloud API oficial ou Simulação (wa.me).
  */
 const twilio = require('twilio');
 
@@ -36,64 +36,41 @@ async function sendTwilio({ accountSid, authToken, from, to, message }) {
   };
 }
 
-async function sendCallMeBot({ apiKey, to, message }) {
-  const cleanPhone = normalizarTelefone(process.env.CALLMEBOT_PHONE || to);
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cleanPhone)}&text=${encodeURIComponent(
-    message
-  )}&apikey=${encodeURIComponent(apiKey)}`;
-
-  const response = await fetch(url, { method: 'GET' });
-  const textResp = await response.text().catch(() => '');
-  if (!response.ok) {
-    throw new Error(textResp || `CallMeBot HTTP error ${response.status}`);
-  }
-
-  return {
-    success: true,
-    simulated: false,
-    provider: 'callmebot',
-    to: cleanPhone,
-    response: textResp.slice(0, 120)
-  };
-}
-
-async function sendZApi({ instanceId, token, clientToken, to, message }) {
+async function sendMetaCloudApi({ token, phoneNumberId, to, message }) {
   const cleanPhone = normalizarTelefone(to);
-  const endpoint = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
-
-  const headers = {
-    'Content-Type': 'application/json'
-  };
-  if (clientToken) {
-    headers['Client-Token'] = clientToken;
-  }
+  const endpoint = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
 
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({
-      phone: cleanPhone,
-      message
+      messaging_product: 'whatsapp',
+      to: cleanPhone,
+      type: 'text',
+      text: { body: message }
     })
   });
 
   const resData = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(resData.message || resData.error || `Z-API HTTP error ${response.status}`);
+    throw new Error(resData.error?.message || `Meta Cloud API HTTP error ${response.status}`);
   }
 
   return {
     success: true,
     simulated: false,
-    messageId: resData.zaapId || resData.messageId,
-    provider: 'zapi',
+    messageId: resData.messages?.[0]?.id,
+    provider: 'meta-cloud',
     to: cleanPhone
   };
 }
 
 const whatsappProvider = {
   /**
-   * Envia mensagem WhatsApp para o destinatário via `twilio`, `callmebot`, `zapi` ou modo simulação.
+   * Envia mensagem WhatsApp para o destinatário via `twilio`, `meta` ou modo simulação.
    * @param {Object} params
    * @param {string} params.to - Número de telefone do destinatário
    * @param {string} params.message - Mensagem de texto a ser enviada
@@ -116,23 +93,15 @@ const whatsappProvider = {
           return { ...res, whatsappWebUrl };
         }
         console.warn('[WhatsApp] Provedor Twilio selecionado, mas credenciais incompletas. Usando modo simulação.');
-      } else if (provider === 'callmebot') {
-        const apiKey = process.env.CALLMEBOT_API_KEY;
-        if (apiKey && (cleanTo || process.env.CALLMEBOT_PHONE)) {
-          const res = await sendCallMeBot({ apiKey, to: cleanTo, message });
-          return { ...res, whatsappWebUrl };
-        }
-        console.warn('[WhatsApp] Provedor CallMeBot selecionado, mas CALLMEBOT_API_KEY ausente. Usando modo simulação.');
-      } else if (provider === 'zapi') {
-        const instanceId = process.env.ZAPI_INSTANCE_ID;
-        const token = process.env.ZAPI_TOKEN;
-        const clientToken = process.env.ZAPI_CLIENT_TOKEN;
+      } else if (provider === 'meta') {
+        const token = process.env.WHATSAPP_META_TOKEN;
+        const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
-        if (instanceId && token && cleanTo) {
-          const res = await sendZApi({ instanceId, token, clientToken, to: cleanTo, message });
+        if (token && phoneNumberId && cleanTo) {
+          const res = await sendMetaCloudApi({ token, phoneNumberId, to: cleanTo, message });
           return { ...res, whatsappWebUrl };
         }
-        console.warn('[WhatsApp] Provedor Z-API selecionado, mas credenciais incompletas. Usando modo simulação.');
+        console.warn('[WhatsApp] Provedor Meta Cloud selecionado, mas credenciais incompletas. Usando modo simulação.');
       }
 
       // Modo Simulação (Fallback ou Provedor 'mock')
