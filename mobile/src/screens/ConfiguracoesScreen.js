@@ -55,10 +55,22 @@ export default function ConfiguracoesScreen({ navigation }) {
   const [salvando, setSalvando] = useState(false);
   const [feedbackSucesso, setFeedbackSucesso] = useState('');
 
+  const formatarTelefone = (valor) => {
+    if (!valor) return '';
+    const limpo = String(valor).replace(/\D/g, '').slice(0, 11);
+    if (limpo.length === 0) return '';
+    if (limpo.length <= 2) return `(${limpo}`;
+    if (limpo.length <= 6) return `(${limpo.slice(0, 2)}) ${limpo.slice(2)}`;
+    if (limpo.length <= 10) {
+      return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 6)}-${limpo.slice(6)}`;
+    }
+    return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 7)}-${limpo.slice(7, 11)}`;
+  };
+
   // Dados cadastrais
   const [tipoConta, setTipoConta] = useState(usuario?.tipo || 'diarista');
   const [nome, setNome] = useState(usuario?.nome || '');
-  const [telefone, setTelefone] = useState(usuario?.telefone || '');
+  const [telefone, setTelefone] = useState(formatarTelefone(usuario?.telefone || ''));
   const [bairro, setBairro] = useState(usuario?.bairro || '');
 
   // Preferências de canais de notificação (Switches nativos)
@@ -82,7 +94,7 @@ export default function ConfiguracoesScreen({ navigation }) {
           const c = res.data.data;
           if (c.tipo) setTipoConta(c.tipo);
           if (c.nome) setNome(c.nome);
-          if (c.telefone) setTelefone(c.telefone);
+          if (c.telefone) setTelefone(formatarTelefone(c.telefone));
           if (c.bairro) setBairro(c.bairro);
           if (c.notif_whatsapp !== undefined) setNotifWhatsapp(Boolean(c.notif_whatsapp));
           if (c.notif_email !== undefined) setNotifEmail(Boolean(c.notif_email));
@@ -297,10 +309,11 @@ export default function ConfiguracoesScreen({ navigation }) {
                 <TextInput
                   style={styles.textInput}
                   value={telefone}
-                  onChangeText={setTelefone}
+                  onChangeText={(v) => setTelefone(formatarTelefone(v))}
                   placeholder="(11) 98888-7777"
                   placeholderTextColor="#94A3B8"
                   keyboardType="phone-pad"
+                  maxLength={15}
                   autoComplete="off"
                   textContentType="none"
                 />

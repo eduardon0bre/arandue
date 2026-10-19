@@ -12,7 +12,20 @@ export default function Configuracoes() {
   const navigate = useNavigate();
   const { usuarioAtual, atualizarPapel, atualizarPerfil, logout, excluirConta } = useUser();
 
-  const limparTelefonePadrao = (tel) => (tel && tel !== '11999998888' ? tel : '');
+  const formatarTelefone = (valor) => {
+    if (!valor) return '';
+    const limpo = String(valor).replace(/\D/g, '').slice(0, 11);
+    if (limpo.length === 0) return '';
+    if (limpo.length <= 2) return `(${limpo}`;
+    if (limpo.length <= 6) return `(${limpo.slice(0, 2)}) ${limpo.slice(2)}`;
+    if (limpo.length <= 10) {
+      return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 6)}-${limpo.slice(6)}`;
+    }
+    return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 7)}-${limpo.slice(7, 11)}`;
+  };
+
+  const limparTelefonePadrao = (tel) =>
+    tel && tel !== '11999998888' ? formatarTelefone(tel) : '';
 
   const [form, setForm] = useState({
     nome: usuarioAtual?.nome || '',
@@ -103,9 +116,16 @@ export default function Configuracoes() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const novoValor =
+      type === 'checkbox'
+        ? checked
+        : name === 'telefone'
+          ? formatarTelefone(value)
+          : value;
+
     setForm((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: novoValor
     }));
 
     if (erros[name]) {
@@ -167,7 +187,12 @@ export default function Configuracoes() {
 
     const novosErros = {};
     if (!form.nome.trim()) novosErros.nome = 'Nome é obrigatório.';
-    if (!form.telefone.trim()) novosErros.telefone = 'Telefone é obrigatório.';
+    const telLimpo = form.telefone.replace(/\D/g, '');
+    if (!telLimpo) {
+      novosErros.telefone = 'Telefone é obrigatório.';
+    } else if (telLimpo.length < 10) {
+      novosErros.telefone = 'Informe um telefone com DDD válido (mínimo 10 dígitos).';
+    }
     if (!form.bairro.trim()) novosErros.bairro = 'Bairro é obrigatório.';
 
     if (Object.keys(novosErros).length > 0) {
@@ -352,6 +377,9 @@ export default function Configuracoes() {
             <FormInput
               label="Telefone / WhatsApp"
               name="telefone"
+              type="tel"
+              inputMode="numeric"
+              maxLength={15}
               value={form.telefone}
               onChange={handleChange}
               placeholder="(11) 98888-7777"

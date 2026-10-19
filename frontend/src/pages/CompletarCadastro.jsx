@@ -22,8 +22,21 @@ export default function CompletarCadastro() {
   const [alertaErro, setAlertaErro] = useState(null);
   const [alertaSucesso, setAlertaSucesso] = useState(null);
 
+  const formatarTelefone = (valor) => {
+    if (!valor) return '';
+    const limpo = String(valor).replace(/\D/g, '').slice(0, 11);
+    if (limpo.length === 0) return '';
+    if (limpo.length <= 2) return `(${limpo}`;
+    if (limpo.length <= 6) return `(${limpo.slice(0, 2)}) ${limpo.slice(2)}`;
+    if (limpo.length <= 10) {
+      return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 6)}-${limpo.slice(6)}`;
+    }
+    return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 7)}-${limpo.slice(7, 11)}`;
+  };
+
   const handleTelefoneChange = (e) => {
-    setForm((prev) => ({ ...prev, telefone: e.target.value }));
+    const formatado = formatarTelefone(e.target.value);
+    setForm((prev) => ({ ...prev, telefone: formatado }));
     if (erros.telefone) {
       setErros((prev) => ({ ...prev, telefone: null }));
     }
@@ -215,6 +228,8 @@ export default function CompletarCadastro() {
               id="comp-telefone"
               name="telefone"
               type="tel"
+              inputMode="numeric"
+              maxLength={15}
               autoComplete="off"
               value={form.telefone}
               onChange={handleTelefoneChange}
