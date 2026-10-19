@@ -15,6 +15,8 @@ export default function FormInput({
   min,
   max,
   step,
+  maxLength,
+  inputMode,
   disabled = false,
   autoComplete,
   className = ''
@@ -41,6 +43,7 @@ export default function FormInput({
           required={required}
           disabled={disabled}
           rows={rows}
+          maxLength={maxLength}
           autoComplete={autoComplete}
           className={`form-textarea ${error ? 'error' : ''}`}
         />
@@ -57,6 +60,8 @@ export default function FormInput({
           min={min}
           max={max}
           step={step}
+          maxLength={maxLength}
+          inputMode={inputMode}
           autoComplete={autoComplete}
           className={`form-input ${error ? 'error' : ''}`}
         />
