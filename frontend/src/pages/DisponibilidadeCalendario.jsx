@@ -11,9 +11,7 @@ import {
   Settings,
   Check,
   CheckCircle2,
-  CalendarDays,
-  Info,
-  X
+  CalendarDays
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
@@ -69,7 +67,6 @@ export default function DisponibilidadeCalendario() {
   const [mensagemErro, setMensagemErro] = useState(null);
 
   // Formulário de informações de horário para o dia selecionado
-  const [turnoAtivoId, setTurnoAtivoId] = useState('integral');
   const [horaInicio, setHoraInicio] = useState('08:00');
   const [horaFim, setHoraFim] = useState('17:00');
   const [observacao, setObservacao] = useState('');
@@ -331,7 +328,7 @@ export default function DisponibilidadeCalendario() {
       const res = await api.post('/disponibilidades', payload);
       if (res.data?.success) {
         const novoItem = {
-          id: res.data.data?.id || Date.now(),
+          id: res.data.data?.id || Number(res.data.data?.insertId || 0),
           diarista_id: usuarioAtual.id,
           data: dataSelecionada,
           hora_inicio: horaInicio,
