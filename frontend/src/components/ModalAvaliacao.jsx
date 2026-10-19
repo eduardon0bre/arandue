@@ -92,7 +92,7 @@ function FormAvaliacaoConteudo({
       title={tituloModal}
       maxWidth="560px"
       footer={
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', width: '100%', flexWrap: 'wrap' }}>
           <Button variant="outline" disabled={enviando} onClick={onClose}>
             {isModoVisualizacao ? 'Fechar' : 'Cancelar'}
           </Button>
@@ -177,7 +177,13 @@ function FormAvaliacaoConteudo({
                     background: 'none',
                     border: 'none',
                     cursor: isModoVisualizacao ? 'default' : 'pointer',
-                    padding: '4px',
+                    padding: '6px',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    touchAction: 'manipulation',
                     transition: 'transform 0.15s ease',
                     transform: !isModoVisualizacao && (hoverNota === estrela || nota === estrela) ? 'scale(1.15)' : 'scale(1)'
                   }}

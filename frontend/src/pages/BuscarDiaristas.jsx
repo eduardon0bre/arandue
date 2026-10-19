@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Users,
   Search,
-  RefreshCw
+  RefreshCw,
+  Briefcase,
+  Settings
 } from 'lucide-react';
 import CardDiarista from '../components/CardDiarista';
 import ModalAgendaDiarista from '../components/ModalAgendaDiarista';
@@ -12,6 +15,7 @@ import FormSelect from '../components/FormSelect';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Alert from '../components/Alert';
 import api from '../services/api';
+import { useUser } from '../context/UserContext';
 
 const ESPECIALIDADES = [
   { value: '', label: 'Todas as especialidades' },
@@ -28,9 +32,12 @@ const ESPECIALIDADES = [
 ];
 
 export default function BuscarDiaristas() {
+  const { usuarioAtual, estaAutenticado } = useUser();
   const [diaristas, setDiaristas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
+
+  const isDiarista = estaAutenticado && usuarioAtual?.tipo === 'diarista';
 
   // Filtros
   const [busca, setBusca] = useState('');
@@ -64,9 +71,13 @@ export default function BuscarDiaristas() {
   };
 
   useEffect(() => {
+    if (isDiarista) {
+      setCarregando(false);
+      return;
+    }
     carregarDiaristas();
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [servico, dataFiltro]);
+  }, [servico, dataFiltro, isDiarista]);
 
   const handleBuscar = (e) => {
     if (e) e.preventDefault();
@@ -80,24 +91,64 @@ export default function BuscarDiaristas() {
     setDataFiltro('');
   };
 
+  // Se o usuário logado for Diarista, a busca de profissionais não se aplica ao perfil dele
+  if (isDiarista) {
+    return (
+      <div className="container" style={{ maxWidth: '640px', padding: '4rem 1rem', textAlign: 'center' }}>
+        <div
+          style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '2.5rem 2rem',
+            boxShadow: 'var(--shadow-md)'
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--primary-light)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem'
+            }}
+          >
+            <Users size={28} />
+          </div>
+
+          <h2 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+            Busca de Profissionais Voltada para Contratantes
+          </h2>
+
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5, marginBottom: '1.75rem' }}>
+            Seu perfil atual é <strong>Diarista</strong>. A busca de diaristas e consulta de agendas é voltada para quem deseja contratar serviços. Para encontrar oportunidades de trabalho, confira as oportunidades abertas no mural ou altere seu papel para <strong>Ambos</strong> nas Configurações.
+          </p>
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/">
+              <Button variant="primary" icon={<Briefcase size={16} />}>
+                Ver Vagas Disponíveis
+              </Button>
+            </Link>
+            <Link to="/configuracoes">
+              <Button variant="outline" icon={<Settings size={16} />}>
+                Configurações da Conta
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container" style={{ paddingBottom: '3rem' }}>
       {/* Banner de Apresentação */}
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '2rem',
-          marginBottom: '2rem',
-          boxShadow: 'var(--shadow-sm)',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1.5rem'
-        }}
-      >
+      <div className="responsive-banner">
         <div style={{ maxWidth: '650px' }}>
           <div
             style={{
@@ -117,14 +168,11 @@ export default function BuscarDiaristas() {
           <h1 style={{ fontSize: '1.85rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
             Buscar Diaristas & Ver Horários Livres
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-            Consulte a agenda dos trabalhadores autônomos, veja datas disponíveis e horários livres, avaliações de outros contratantes e combine diárias com facilidade.
-          </p>
         </div>
       </div>
 
       {erro && (
-        <Alert type="danger" message={erro} onClose={() => setErro(null)} />
+        <Alert popup type="danger" message={erro} onClose={() => setErro(null)} />
       )}
 
       {/* Seção de Filtros */}
@@ -139,14 +187,7 @@ export default function BuscarDiaristas() {
         }}
       >
         <form onSubmit={handleBuscar}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-              gap: '1rem',
-              alignItems: 'flex-end'
-            }}
-          >
+          <div className="filter-form-grid">
             <div>
               <FormInput
                 label="Buscar por nome ou habilidade"
@@ -192,7 +233,7 @@ export default function BuscarDiaristas() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem', justifyContent: 'flex-end' }}>
+          <div className="filter-buttons-row" style={{ marginTop: '1.25rem', justifyContent: 'flex-end' }}>
             <Button
               type="button"
               variant="outline"

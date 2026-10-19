@@ -124,7 +124,7 @@ export default function ModalAgendaDiarista({ diarista, isOpen, onClose }) {
       title={`Agenda de Disponibilidade — ${diarista.nome}`}
       maxWidth="680px"
       footer={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             {diarista.telefone ? `Contato: ${diarista.telefone}` : ''}
           </div>
@@ -187,7 +187,7 @@ export default function ModalAgendaDiarista({ diarista, isOpen, onClose }) {
             <LoadingSpinner text="Carregando calendário de horários..." />
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.25rem' }}>
+          <div className="modal-agenda-grid">
             {/* Calendário Mensal */}
             <div
               style={{

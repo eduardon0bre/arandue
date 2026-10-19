@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, RefreshCw, Briefcase, Plus, Send, Check, Settings, ShieldAlert } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import FormInput from '../components/FormInput';
@@ -25,11 +25,26 @@ const CATEGORIAS = [
 export default function MuralVagas() {
   const { usuarioAtual, estaAutenticado } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [demandas, setDemandas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
   const [mensagemSucesso, setMensagemSucesso] = useState(null);
+
+  // Captura mensagens recebidas via redirecionamento de outras telas (ex: Configurações)
+  useEffect(() => {
+    if (location.state?.mensagem) {
+      setMensagemSucesso(location.state.mensagem);
+      window.history.replaceState({}, document.title);
+    } else if (location.search) {
+      const searchParams = new URLSearchParams(location.search);
+      if (searchParams.get('status') === 'conta_excluida') {
+        setMensagemSucesso('Sua conta foi excluída com sucesso.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [location.state, location.search]);
 
   // Filtros
   const [busca, setBusca] = useState('');
@@ -196,19 +211,7 @@ export default function MuralVagas() {
   return (
     <div className="container">
       {/* Banner de Boas-vindas */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid var(--border-color)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
-        marginBottom: '2rem',
-        boxShadow: 'var(--shadow-sm)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '1.5rem'
-      }}>
+      <div className="responsive-banner">
         <div style={{ maxWidth: '650px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
             <Briefcase size={16} />
@@ -232,6 +235,7 @@ export default function MuralVagas() {
 
       {mensagemSucesso && (
         <Alert
+          popup
           type="success"
           message={mensagemSucesso}
           onClose={() => setMensagemSucesso(null)}
@@ -240,6 +244,7 @@ export default function MuralVagas() {
 
       {erro && (
         <Alert
+          popup
           type="danger"
           message={erro}
           onClose={() => setErro(null)}
@@ -255,12 +260,7 @@ export default function MuralVagas() {
         marginBottom: '2rem',
         boxShadow: 'var(--shadow-sm)'
       }}>
-        <form onSubmit={handleBuscar} style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem',
-          alignItems: 'flex-end'
-        }}>
+        <form onSubmit={handleBuscar} className="filter-form-grid">
           <div>
             <FormInput
               label="Buscar por título ou bairro"
@@ -298,7 +298,7 @@ export default function MuralVagas() {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+          <div className="filter-buttons-row">
             <Button type="submit" variant="primary" icon={<Search size={16} />}>
               Filtrar
             </Button>

@@ -218,25 +218,16 @@ export default function Curriculo() {
       </header>
 
       {mensagemSucesso && (
-        <Alert type="success" message={mensagemSucesso} onClose={() => setMensagemSucesso(null)} />
+        <Alert popup type="success" message={mensagemSucesso} onClose={() => setMensagemSucesso(null)} />
       )}
 
       {mensagemErro && (
-        <Alert type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
+        <Alert popup type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
       )}
 
       <form onSubmit={handleSubmit}>
         {/* Cartão de Apresentação e Dados Básicos */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            marginBottom: '1.5rem',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
+        <div className="responsive-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
             <div
               style={{
@@ -313,16 +304,7 @@ export default function Curriculo() {
         </div>
 
         {/* Especialidades e Serviços Prestados */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            marginBottom: '1.5rem',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
+        <div className="responsive-card">
           <div style={{ marginBottom: '1rem' }}>
             <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
               Especialidades & Tipos de Serviço
@@ -364,16 +346,7 @@ export default function Curriculo() {
         </div>
 
         {/* Reputação e Avaliações Recebidas */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '2rem',
-            marginBottom: '2rem',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
+        <div className="responsive-card">
           <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>
             Reputação na Plataforma
           </h3>
@@ -411,7 +384,7 @@ export default function Curriculo() {
         </div>
 
         {(temAlteracao || salvando) && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
             <Button
               type="button"
               variant="outline"

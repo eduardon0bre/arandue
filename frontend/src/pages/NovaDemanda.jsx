@@ -135,32 +135,23 @@ export default function NovaDemanda() {
         </Link>
       </div>
 
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid var(--border-color)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
+      <div className="responsive-card">
         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>
             <PlusCircle size={18} />
             CADASTRO DE DEMANDA
           </div>
           <h1 style={{ fontSize: '1.6rem', marginTop: '0.25rem' }}>Anunciar Nova Diária / Bico</h1>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            Preencha os dados do serviço operacional com transparência prévia de remuneração e jornada.
-          </p>
         </div>
 
         {sucesso && (
-          <Alert type="success" title="Vaga cadastrada com sucesso!">
+          <Alert popup type="success" title="Vaga cadastrada com sucesso!">
             Redirecionando para o seu painel de gestão...
           </Alert>
         )}
 
         {mensagemErro && (
-          <Alert type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
+          <Alert popup type="danger" message={mensagemErro} onClose={() => setMensagemErro(null)} />
         )}
 
         <form onSubmit={handleSubmit}>
@@ -280,7 +271,7 @@ export default function NovaDemanda() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
             <Button
               type="button"
               variant="outline"

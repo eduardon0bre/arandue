@@ -49,7 +49,7 @@ export default function ModalCurriculo({
           </Button>
 
           {candidato.status === 'pendente' && (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {onRecusar && (
                 <Button
                   variant="outline"
@@ -146,7 +146,7 @@ export default function ModalCurriculo({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))',
             gap: '0.75rem'
           }}
         >
