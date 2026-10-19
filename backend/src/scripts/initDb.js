@@ -57,6 +57,21 @@ async function init() {
   try {
     const schemaPath = findSqlFile('schema.sql');
     await runSqlFile(schemaPath);
+
+    // Migrações incrementais seguras para bancos existentes
+    try {
+      const conn = await db.getConnection();
+      try {
+        await conn.query('ALTER TABLE usuarios ADD COLUMN push_token VARCHAR(255) NULL');
+      } catch (colErr) {
+        // Ignora erro se coluna já existir (código 1060 / ER_DUP_FIELDNAME)
+      } finally {
+        conn.release();
+      }
+    } catch (migErr) {
+      // Ignora caso conexão não esteja disponível neste momento
+    }
+
     console.log('✅ Tabelas criadas/verificadas com sucesso!');
 
     // Executa seed se solicitado via argumento --seed ou SEED=true

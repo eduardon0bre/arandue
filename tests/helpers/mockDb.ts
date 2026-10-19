@@ -16,6 +16,19 @@ export interface MockUser {
   notif_whatsapp?: boolean;
   notif_email?: boolean;
   notif_push?: boolean;
+  push_token?: string | null;
+}
+
+export interface MockNotificacao {
+  id: number;
+  usuario_id: number;
+  tipo: string;
+  titulo: string;
+  mensagem: string;
+  canais_enviados: string;
+  lida: boolean;
+  push_token?: string | null;
+  data_criacao: string;
 }
 
 export interface MockDemanda {
@@ -66,10 +79,12 @@ let demandas: MockDemanda[] = [];
 let candidaturas: MockCandidatura[] = [];
 let avaliacoes: MockAvaliacao[] = [];
 let disponibilidades: MockDisponibilidade[] = [];
+let notificacoes: MockNotificacao[] = [];
 let autoIncDemanda = 100;
 let autoIncCandidatura = 500;
 let autoIncAvaliacao = 300;
 let autoIncDisponibilidade = 400;
+let autoIncNotificacao = 100;
 
 export const INITIAL_USERS: MockUser[] = [
   {
@@ -79,7 +94,11 @@ export const INITIAL_USERS: MockUser[] = [
     telefone: '11988887777',
     tipo: 'contratante',
     bairro: 'Pinheiros',
-    status: 'ativo'
+    status: 'ativo',
+    notif_whatsapp: true,
+    notif_email: true,
+    notif_push: true,
+    push_token: null
   },
   {
     id: 2,
@@ -88,7 +107,11 @@ export const INITIAL_USERS: MockUser[] = [
     telefone: '11955554444',
     tipo: 'diarista',
     bairro: 'Centro',
-    status: 'ativo'
+    status: 'ativo',
+    notif_whatsapp: true,
+    notif_email: true,
+    notif_push: true,
+    push_token: null
   },
   {
     id: 3,
@@ -97,7 +120,11 @@ export const INITIAL_USERS: MockUser[] = [
     telefone: '11911110000',
     tipo: 'ambas',
     bairro: 'Vila Mariana',
-    status: 'ativo'
+    status: 'ativo',
+    notif_whatsapp: true,
+    notif_email: true,
+    notif_push: true,
+    push_token: null
   }
 ];
 
@@ -171,10 +198,16 @@ export function resetMockDb(): void {
   candidaturas = [];
   avaliacoes = [];
   disponibilidades = JSON.parse(JSON.stringify(INITIAL_DISPONIBILIDADES));
+  notificacoes = [];
   autoIncDemanda = 100;
   autoIncCandidatura = 500;
   autoIncAvaliacao = 300;
   autoIncDisponibilidade = 400;
+  autoIncNotificacao = 100;
+}
+
+export function getMockNotificacoes(): MockNotificacao[] {
+  return notificacoes;
 }
 
 export function getMockUsers(): MockUser[] {
@@ -388,6 +421,9 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
       }
       if (norm.includes('AVATAR_URL = ?') && !norm.includes('GOOGLE_ID = ?')) {
         u.avatar_url = String(params[0]);
+      }
+      if (norm.includes('PUSH_TOKEN = ?')) {
+        u.push_token = params[0] ? String(params[0]) : null;
       }
     }
     return [{ affectedRows: 1 }, {}];
@@ -711,6 +747,66 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
       };
     });
     return [diaristas, {}];
+  }
+
+  // 26. INSERT INTO notificacoes
+  if (norm.startsWith('INSERT INTO NOTIFICACOES')) {
+    const [usuario_id, tipo, titulo, mensagem, canais_enviados, push_token] = params;
+    const newId = ++autoIncNotificacao;
+    const novaNotif: MockNotificacao = {
+      id: newId,
+      usuario_id: Number(usuario_id),
+      tipo: String(tipo || 'sistema'),
+      titulo: String(titulo),
+      mensagem: String(mensagem),
+      canais_enviados: String(canais_enviados || ''),
+      lida: false,
+      push_token: push_token ? String(push_token) : null,
+      data_criacao: new Date().toISOString()
+    };
+    notificacoes.push(novaNotif);
+    return [{ insertId: newId, affectedRows: 1 }, {}];
+  }
+
+  // 27. COUNT(*) FROM notificacoes WHERE usuario_id = ? AND lida = FALSE
+  if (norm.includes('FROM NOTIFICACOES') && norm.includes('COUNT(*)') && norm.includes('USUARIO_ID = ?')) {
+    const usuarioId = Number(params[0]);
+    const total = notificacoes.filter((n) => n.usuario_id === usuarioId && !n.lida).length;
+    return [[{ total }], {}];
+  }
+
+  // 28. SELECT FROM notificacoes WHERE usuario_id = ?
+  if (norm.includes('FROM NOTIFICACOES') && norm.includes('USUARIO_ID = ?')) {
+    const usuarioId = Number(params[0]);
+    const list = notificacoes
+      .filter((n) => n.usuario_id === usuarioId)
+      .sort((a, b) => b.id - a.id);
+    return [list, {}];
+  }
+
+  // 29. UPDATE notificacoes SET lida = TRUE
+  if (norm.startsWith('UPDATE NOTIFICACOES') && norm.includes('LIDA = TRUE')) {
+    if (norm.includes('WHERE ID = ? AND USUARIO_ID = ?')) {
+      const [idParam, usuarioParam] = params.map(Number);
+      const notif = notificacoes.find((n) => n.id === idParam && n.usuario_id === usuarioParam);
+      if (notif) {
+        notif.lida = true;
+        return [{ affectedRows: 1 }, {}];
+      }
+      return [{ affectedRows: 0 }, {}];
+    }
+    if (norm.includes('WHERE USUARIO_ID = ?')) {
+      const usuarioId = Number(params[0]);
+      let count = 0;
+      for (const n of notificacoes) {
+        if (n.usuario_id === usuarioId && !n.lida) {
+          n.lida = true;
+          count++;
+        }
+      }
+      return [{ affectedRows: count }, {}];
+    }
+    return [{ affectedRows: 1 }, {}];
   }
 
   return [[], {}];

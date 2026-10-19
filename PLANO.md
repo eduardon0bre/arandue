@@ -103,26 +103,26 @@ Navegação entre rotas funcionando e componentes reutilizáveis renderizando de
 O objetivo desta etapa é conectar as chamadas de API do Axios aos componentes visuais, garantindo que todas as operações ocorram pela interface.
 
 ### Tarefas
-- [ ] Configurar cliente HTTP em `src/services/api.js` apontando para `http://localhost:3000/api`.
-- [ ] **Integração do Create:**
+- [x] Configurar cliente HTTP em `src/services/api.js` apontando para `http://localhost:3000/api`.
+- [x] **Integração do Create:**
   - Ligar o formulário da página `NovaDemanda` ao método `api.post('/demandas', dados)`.
   - Adicionar validação de campos vazios e desabilitar botão durante envio.
   - Redirecionar para o mural após criação com feedback visual de sucesso.
-- [ ] **Integração do Read:**
+- [x] **Integração do Read:**
   - Na página `MuralVagas`, carregar dados via `api.get('/demandas')` dentro de um `useEffect`.
   - Renderizar a lista mapeando cada item no componente `Card`.
   - Adicionar estados visuais de `Carregando...` e `Nenhuma vaga encontrada`.
   - Implementar filtro dinâmico por categoria ou busca por texto.
-- [ ] **Integração do Update:**
+- [x] **Integração do Update:**
   - Na página `EditarDemanda`, carregar os dados atuais via `api.get('/demandas/:id')` e preencher os campos.
   - Submeter as alterações via `api.put('/demandas/:id', dadosAtualizados)`.
   - Atualizar o estado e retornar ao painel.
-- [ ] **Integração do Delete:**
+- [x] **Integração do Delete:**
   - Na tabela do `PainelContratante`, ao clicar no botão "Excluir", abrir o componente `Modal`.
   - O modal deve exibir a mensagem: *"Tem certeza que deseja cancelar esta vaga?"*.
   - Ao confirmar, disparar `api.delete('/demandas/:id')`.
   - Atualizar a lista na interface removendo a linha via estado (`setDemandas(prev => prev.filter(...))`), sem recarregar a página.
-- [ ] **Integração da Ação de Contato/Aprovação:**
+- [x] **Integração da Ação de Contato/Aprovação:**
   - No detalhe da vaga, listar candidatos inscritos.
   - Botão "Aprovar" dispara `api.patch('/candidaturas/:id/status')` e exibe o botão direto de WhatsApp com link para o diarista (`wa.me/55...`).
 
@@ -136,9 +136,9 @@ Execução do ciclo completo (criar vaga -> visualizar no mural -> editar valore
 O objetivo desta etapa é auditar o projeto contra todos os requisitos obrigatórios definidos.
 
 ### Checklist de Conformidade
-- [ ] **Banco MySQL:** Tabelas normalizadas, sem dados soltos e com relacionamentos (1:N) íntegros.
-- [ ] **API Node.js:** Estrutura organizada em pastas (`controllers`, `models`, `routes`, `config`), sem queries concatenadas diretamente.
-- [ ] **CRUD Completo:** As 4 operações (Create, Read, Update, Delete) operam sem falhas no console do navegador e no terminal do servidor.
-- [ ] **Frontend React:** Código modular com Navbar, Footer, Buttons, Cards, Modais e Tabelas separados em arquivos individuais na pasta `components`.
-- [ ] **Restrições Respeitadas:** Conteúdo restrito ao público adulto (+18), sem temas proibidos (saúde, religião, esportes).
-- [ ] **Repositório:** Arquivo `.gitignore` configurado ignorando `node_modules` e `.env` em ambas as pastas (backend e frontend).
+- [x] **Banco MySQL:** Tabelas normalizadas, sem dados soltos e com relacionamentos (1:N) íntegros.
+- [x] **API Node.js:** Estrutura organizada em pastas (`controllers`, `models`, `routes`, `config`), sem queries concatenadas diretamente.
+- [x] **CRUD Completo:** As 4 operações (Create, Read, Update, Delete) operam sem falhas no console do navegador e no terminal do servidor.
+- [x] **Frontend React:** Código modular com Navbar, Footer, Buttons, Cards, Modais e Tabelas separados em arquivos individuais na pasta `components`.
+- [x] **Restrições Respeitadas:** Conteúdo restrito ao público adulto (+18), sem temas proibidos (saúde, religião, esportes).
+- [x] **Repositório:** Arquivo `.gitignore` configurado ignorando `node_modules` e `.env` em ambas as pastas (backend e frontend).

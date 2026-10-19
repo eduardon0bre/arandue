@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Bell, LogOut, AlertTriangle, Check, ShieldAlert } from 'lucide-react';
+import { User, Bell, LogOut, AlertTriangle, Check, ShieldAlert, Send } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import Button from '../components/Button';
 import FormInput from '../components/FormInput';
@@ -27,6 +27,8 @@ export default function Configuracoes() {
   const [salvando, setSalvando] = useState(false);
   const [mensagemSucesso, setMensagemSucesso] = useState(null);
   const [mensagemErro, setMensagemErro] = useState(null);
+  const [testandoNotificacao, setTestandoNotificacao] = useState(false);
+  const [feedbackTeste, setFeedbackTeste] = useState(null);
 
   // Modal de Exclusão de Conta (RF-12 e Zona de Perigo)
   const [modalExclusaoAberta, setModalExclusaoAberta] = useState(false);
@@ -108,6 +110,52 @@ export default function Configuracoes() {
       setErros((prev) => ({ ...prev, [name]: null }));
     }
     setMensagemSucesso(null);
+  };
+
+  const handleTestarNotificacao = async () => {
+    setTestandoNotificacao(true);
+    setFeedbackTeste(null);
+    try {
+      const response = await api.post('/notificacoes/testar');
+      const canaisEnviados = response.data?.data?.canais_enviados || [];
+      const resultados = response.data?.data?.resultados || {};
+
+      const emailInfo = resultados.email
+        ? `E-mail (${resultados.email.from || 'tramontina9299@gmail.com'} → ${resultados.email.deliveredTo || 'tramontina4040@gmail.com'})`
+        : 'E-mail';
+
+      const mapeamento = {
+        whatsapp: 'WhatsApp',
+        email: emailInfo,
+        push: 'Push (Navegador/App)'
+      };
+
+      const canaisFormatados = canaisEnviados
+        .map((c) => mapeamento[c.toLowerCase()] || c)
+        .join(', ');
+
+      if (canaisEnviados.length > 0) {
+        setFeedbackTeste({
+          type: 'success',
+          title: 'Notificação de teste enviada com sucesso!',
+          message: `Disparo efetuado nos seguintes canais: ${canaisFormatados}.`
+        });
+      } else {
+        setFeedbackTeste({
+          type: 'info',
+          title: 'Notificação gerada no sistema',
+          message: 'Nenhum canal externo foi acionado. Verifique se as opções de WhatsApp, E-mail ou Push estão ativadas e salvas em seu perfil.'
+        });
+      }
+    } catch (err) {
+      setFeedbackTeste({
+        type: 'danger',
+        title: 'Erro no envio de teste',
+        message: err.response?.data?.message || err.message || 'Erro ao enviar notificação de teste.'
+      });
+    } finally {
+      setTestandoNotificacao(false);
+    }
   };
 
   const handleSalvarPerfil = async (e) => {
@@ -384,6 +432,57 @@ export default function Configuracoes() {
                 </p>
               </div>
             </label>
+          </div>
+
+          {/* Ação de Teste de Notificações Multi-Canal */}
+          <div
+            style={{
+              marginTop: '1.5rem',
+              paddingTop: '1.25rem',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+                  Testar Canais Ativos
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  Envie uma notificação de teste para verificar se suas mensagens chegam corretamente.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleTestarNotificacao}
+                loading={testandoNotificacao}
+                icon={<Send size={15} />}
+              >
+                Enviar Notificação de Teste
+              </Button>
+            </div>
+
+            {feedbackTeste && (
+              <Alert
+                type={feedbackTeste.type}
+                title={feedbackTeste.title}
+                message={feedbackTeste.message}
+                onClose={() => setFeedbackTeste(null)}
+              />
+            )}
           </div>
         </div>
 

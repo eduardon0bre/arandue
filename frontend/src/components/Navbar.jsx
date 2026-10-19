@@ -15,6 +15,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -161,7 +162,9 @@ export default function Navbar() {
 
           {/* Menu do Usuário Autenticado (Dropdown conforme Wireframe 4.1) */}
           {estaAutenticado && (
-            <div className="user-menu-wrapper">
+            <>
+              <NotificationBell />
+              <div className="user-menu-wrapper">
               <button
                 type="button"
                 className="user-menu-btn"
@@ -271,6 +274,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+            </>
           )}
 
         </nav>

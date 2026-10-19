@@ -76,7 +76,7 @@ async function authMiddleware(req, res, next) {
     let rows = [];
     try {
       const queryResult = await db.query(
-        'SELECT id, nome, email, telefone, tipo, bairro, status, notif_whatsapp, notif_email, notif_push FROM usuarios WHERE id = ?',
+        'SELECT id, nome, email, telefone, tipo, bairro, status, notif_whatsapp, notif_email, notif_push, push_token FROM usuarios WHERE id = ?',
         [usuarioId]
       );
       rows = queryResult && queryResult[0] ? queryResult[0] : [];

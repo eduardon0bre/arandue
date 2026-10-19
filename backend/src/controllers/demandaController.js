@@ -1,6 +1,7 @@
 const demandaModel = require('../models/demandaModel');
 const candidaturaModel = require('../models/candidaturaModel');
 const usuarioModel = require('../models/usuarioModel');
+const notificationService = require('../services/notificationService');
 const db = require('../config/db');
 const { canCreateJob } = require('../utils/permissions');
 
@@ -306,6 +307,39 @@ const demandaController = {
 
       await demandaModel.update(id, { status: 'concluida' });
       const demandaAtualizada = await demandaModel.findById(id);
+
+      // Disparo assíncrono seguro de notificações de serviço concluído
+      try {
+        const candidatos = await candidaturaModel.findByDemandaId(id);
+        const candidatosAceitos = candidatos.filter((c) => c.status === 'aceita');
+        const isDono = usuarioId && Number(demandaExistente.contratante_id) === Number(usuarioId);
+
+        // Notifica todos os diaristas aceitos nesta demanda
+        for (const cand of candidatosAceitos) {
+          if (!usuarioId || Number(cand.diarista_id) !== Number(usuarioId)) {
+            notificationService.dispararNotificacao({
+              usuario_id: cand.diarista_id,
+              tipo: 'servico_concluido',
+              titulo: 'Serviço Concluído!',
+              mensagem: `O serviço "${demandaExistente.titulo}" foi marcado como concluído. Não se esqueça de avaliar a experiência no Aranduê!`,
+              metadata: { demanda_id: Number(id), contratante_id: demandaExistente.contratante_id }
+            }).catch((notifErr) => console.warn('[Notificação servico_concluido diarista]:', notifErr.message));
+          }
+        }
+
+        // Se quem concluiu foi o diarista (não o contratante), notifica o contratante
+        if (!isDono && demandaExistente.contratante_id) {
+          notificationService.dispararNotificacao({
+            usuario_id: demandaExistente.contratante_id,
+            tipo: 'servico_concluido',
+            titulo: 'Serviço Concluído!',
+            mensagem: `O diarista concluiu o serviço da vaga "${demandaExistente.titulo}". Por favor, confirme e avalie o atendimento!`,
+            metadata: { demanda_id: Number(id) }
+          }).catch((notifErr) => console.warn('[Notificação servico_concluido contratante]:', notifErr.message));
+        }
+      } catch (notifErr) {
+        console.warn('[Notificação servico_concluido]:', notifErr.message);
+      }
 
       return res.status(200).json({
         success: true,
