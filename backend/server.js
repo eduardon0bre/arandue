@@ -15,6 +15,16 @@ async function startServer() {
       console.log(' Conexão com o banco de dados MySQL estabelecida com sucesso.');
     }
 
+    // Auto-criação de tabelas caso AUTO_INIT_DB seja habilitado
+    if (process.env.AUTO_INIT_DB === 'true') {
+      try {
+        const { init } = require('./src/scripts/initDb');
+        await init();
+      } catch (initErr) {
+        console.warn(' Alerta ao auto-inicializar tabelas:', initErr.message);
+      }
+    }
+
     const server = app.listen(PORT, HOST, () => {
       console.log(` Servidor da API REST em execução em http://${HOST}:${PORT}`);
       console.log(` Healthcheck disponível em http://${HOST}:${PORT}/health`);

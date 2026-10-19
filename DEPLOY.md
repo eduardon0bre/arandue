@@ -51,12 +51,21 @@ O frontend React (Vite) já possui o arquivo `frontend/vercel.json` configurado 
 
 ---
 
+## ⚡ Ambientes de Produção Ativos
+
+- **Frontend (Vercel):** [https://frontend-murex-one-99.vercel.app](https://frontend-murex-one-99.vercel.app)
+- **Backend API (Railway):** [https://backend-production-8ba16.up.railway.app](https://backend-production-8ba16.up.railway.app)
+- **Healthcheck:** [https://backend-production-8ba16.up.railway.app/health](https://backend-production-8ba16.up.railway.app/health)
+- **API Demandas:** [https://backend-production-8ba16.up.railway.app/api/demandas](https://backend-production-8ba16.up.railway.app/api/demandas)
+
+---
+
 ## 3. Verificação Pós-Deploy
 
 1. **Health Check do Backend:**
    Acesse no navegador:
    ```text
-   https://sua-api.up.railway.app/health
+   https://backend-production-8ba16.up.railway.app/health
    ```
    A resposta esperada é:
    ```json

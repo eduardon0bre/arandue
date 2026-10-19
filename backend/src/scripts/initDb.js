@@ -36,27 +36,53 @@ async function runSqlFile(filePath) {
   }
 }
 
+function findSqlFile(filename) {
+  const candidates = [
+    path.resolve(__dirname, '../../database', filename),
+    path.resolve(__dirname, '../../../database', filename),
+    path.resolve(process.cwd(), 'database', filename),
+    path.resolve(process.cwd(), '../database', filename)
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
 async function init() {
   console.log('🔄 Iniciando criação e verificação das tabelas no banco de dados...');
   try {
-    const schemaPath = path.resolve(__dirname, '../../../database/schema.sql');
+    const schemaPath = findSqlFile('schema.sql');
     await runSqlFile(schemaPath);
     console.log('✅ Tabelas criadas/verificadas com sucesso!');
 
     // Executa seed se solicitado via argumento --seed ou SEED=true
     if (process.argv.includes('--seed') || process.env.SEED === 'true') {
       console.log('🌱 Inserindo dados iniciais (seed)...');
-      const seedPath = path.resolve(__dirname, '../../../database/seed.sql');
+      const seedPath = findSqlFile('seed.sql');
       await runSqlFile(seedPath);
       console.log('✅ Dados de teste inseridos com sucesso!');
     }
 
     console.log('🎉 Inicialização do banco concluída!');
-    process.exit(0);
+    if (require.main === module) {
+      process.exit(0);
+    }
   } catch (err) {
     console.error('❌ Erro fatal ao inicializar banco de dados:', err);
-    process.exit(1);
+    if (require.main === module) {
+      process.exit(1);
+    }
+    throw err;
   }
 }
 
-init();
+if (require.main === module) {
+  init();
+}
+
+module.exports = { init, runSqlFile };
+
