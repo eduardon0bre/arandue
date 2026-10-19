@@ -3,14 +3,7 @@
   "appName": "Aranduê",
   "webDir": "dist",
   "server": {
-    "url": "https://arandue-projeto-final.vercel.app",
     "androidScheme": "https",
-    "cleartext": true,
-    "allowNavigation": [
-      "arandue-projeto-final.vercel.app",
-      "*.vercel.app",
-      "*.google.com",
-      "accounts.google.com"
-    ]
+    "cleartext": true
   }
 }
