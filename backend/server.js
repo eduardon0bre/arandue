@@ -5,6 +5,7 @@ const app = require('./src/app');
 const db = require('./src/config/db');
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 async function startServer() {
   try {
@@ -14,10 +15,22 @@ async function startServer() {
       console.log(' Conexão com o banco de dados MySQL estabelecida com sucesso.');
     }
 
-    app.listen(PORT, () => {
-      console.log(` Servidor da API REST em execução na porta ${PORT}`);
-      console.log(` Endpoint base: http://localhost:${PORT}/api/demandas`);
+    const server = app.listen(PORT, HOST, () => {
+      console.log(` Servidor da API REST em execução em http://${HOST}:${PORT}`);
+      console.log(` Healthcheck disponível em http://${HOST}:${PORT}/health`);
     });
+
+    // Tratamento de encerramento gracioso para containers (Railway / Docker)
+    const gracefulShutdown = (signal) => {
+      console.log(` Recebido sinal ${signal}. Encerrando servidor graciosamente...`);
+      server.close(() => {
+        console.log(' Servidor HTTP finalizado.');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
   } catch (error) {
     console.error(' Falha crítica ao conectar ao banco de dados MySQL:', error.message);
     process.exit(1);

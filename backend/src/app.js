@@ -7,6 +7,8 @@ const usuarioRoutes = require('./routes/usuarioRoutes');
 const avaliacaoRoutes = require('./routes/avaliacaoRoutes');
 const authRoutes = require('./routes/authRoutes');
 const perfilRoutes = require('./routes/perfilRoutes');
+const disponibilidadeRoutes = require('./routes/disponibilidadeRoutes');
+const diaristaRoutes = require('./routes/diaristaRoutes');
 const perfilController = require('./controllers/perfilController');
 const { authMiddleware } = require('./middlewares/authMiddleware');
 
@@ -24,16 +26,21 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rota de liveness / status da API
-app.get('/api/health', (req, res) => {
+// Rota de liveness / status da API (suporte para Railway health checks em /, /health e /api/health)
+const healthHandler = (req, res) => {
   res.status(200).json({
     success: true,
     data: {
       status: 'online',
+      service: 'arandue-api',
       timestamp: new Date().toISOString()
     }
   });
-});
+};
+
+app.get('/', healthHandler);
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // Registro das rotas REST
 app.use('/api/auth', authRoutes);
@@ -63,6 +70,10 @@ app.delete('/api/conta', authMiddleware, perfilController.excluirConta);
 // Usuários e Avaliações
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/avaliacoes', avaliacaoRoutes);
+
+// Disponibilidade e Agenda de Diaristas
+app.use('/api/disponibilidades', disponibilidadeRoutes);
+app.use('/api/diaristas', diaristaRoutes);
 
 // Tratamento de rotas inexistentes (404)
 app.use((req, res) => {
