@@ -184,19 +184,16 @@ export default function GoogleLoginButton({
     prompt: 'select_account'
   });
 
+  const isNativeWebView =
+    typeof window !== 'undefined' &&
+    Boolean(
+      window.Capacitor?.isNativePlatform?.() ||
+      /; wv\)|Android.*Version\/[\d.]+.*Chrome\//i.test(window.navigator?.userAgent || '')
+    );
+
   const handleUsarOutraConta = () => {
-    if (isGoogleConfigurado) {
-      setModalAberto(false);
-      try {
-        loginGoogleReal();
-      } catch (err) {
-        console.error('Erro ao acionar o seletor de contas do Google:', err);
-        if (onError) onError('Não foi possível abrir o seletor do Google.');
-      }
-    } else {
-      setModoNovaConta(true);
-      setErroForm(null);
-    }
+    setModoNovaConta(true);
+    setErroForm(null);
   };
 
   const handleSubmeterNovaConta = (e) => {
@@ -380,17 +377,19 @@ export default function GoogleLoginButton({
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  className={styles.forceGoogleBtn}
-                  onClick={() => {
-                    setModalAberto(false);
-                    setModoNovaConta(false);
-                    loginGoogleReal();
-                  }}
-                >
-                  Tentar abrir janela oficial do Google mesmo assim
-                </button>
+                {!isNativeWebView && isGoogleConfigurado && (
+                  <button
+                    type="button"
+                    className={styles.forceGoogleBtn}
+                    onClick={() => {
+                      setModalAberto(false);
+                      setModoNovaConta(false);
+                      loginGoogleReal();
+                    }}
+                  >
+                    Abrir seletor oficial do Google no navegador
+                  </button>
+                )}
               </form>
             )}
           </div>
