@@ -7,6 +7,8 @@ export interface MockUser {
   id: number;
   nome: string;
   email: string;
+  google_id?: string | null;
+  avatar_url?: string | null;
   telefone: string;
   tipo: 'contratante' | 'diarista' | 'ambas' | string;
   bairro: string;
@@ -48,13 +50,26 @@ export interface MockAvaliacao {
   data_criacao: string;
 }
 
+export interface MockDisponibilidade {
+  id: number;
+  diarista_id: number;
+  data: string;
+  hora_inicio: string;
+  hora_fim: string;
+  status: 'disponivel' | 'ocupado' | 'indisponivel';
+  observacao?: string | null;
+  data_criacao: string;
+}
+
 let users: MockUser[] = [];
 let demandas: MockDemanda[] = [];
 let candidaturas: MockCandidatura[] = [];
 let avaliacoes: MockAvaliacao[] = [];
+let disponibilidades: MockDisponibilidade[] = [];
 let autoIncDemanda = 100;
 let autoIncCandidatura = 500;
 let autoIncAvaliacao = 300;
+let autoIncDisponibilidade = 400;
 
 export const INITIAL_USERS: MockUser[] = [
   {
@@ -113,6 +128,39 @@ export const INITIAL_DEMANDAS: MockDemanda[] = [
   }
 ];
 
+export const INITIAL_DISPONIBILIDADES: MockDisponibilidade[] = [
+  {
+    id: 1,
+    diarista_id: 2,
+    data: '2026-10-20',
+    hora_inicio: '08:00',
+    hora_fim: '12:00',
+    status: 'disponivel',
+    observacao: 'Período da manhã',
+    data_criacao: '2026-10-01T10:00:00Z'
+  },
+  {
+    id: 2,
+    diarista_id: 2,
+    data: '2026-10-20',
+    hora_inicio: '13:00',
+    hora_fim: '17:00',
+    status: 'disponivel',
+    observacao: 'Período da tarde',
+    data_criacao: '2026-10-01T10:00:00Z'
+  },
+  {
+    id: 3,
+    diarista_id: 2,
+    data: '2026-10-22',
+    hora_inicio: '08:00',
+    hora_fim: '17:00',
+    status: 'disponivel',
+    observacao: 'Dia inteiro',
+    data_criacao: '2026-10-01T10:00:00Z'
+  }
+];
+
 /**
  * Restaura o estado original do banco em memória.
  * Deve ser executado em beforeEach/afterEach para garantir isolamento.
@@ -122,9 +170,11 @@ export function resetMockDb(): void {
   demandas = JSON.parse(JSON.stringify(INITIAL_DEMANDAS));
   candidaturas = [];
   avaliacoes = [];
+  disponibilidades = JSON.parse(JSON.stringify(INITIAL_DISPONIBILIDADES));
   autoIncDemanda = 100;
   autoIncCandidatura = 500;
   autoIncAvaliacao = 300;
+  autoIncDisponibilidade = 400;
 }
 
 export function getMockUsers(): MockUser[] {
@@ -143,6 +193,10 @@ export function getMockAvaliacoes(): MockAvaliacao[] {
   return avaliacoes;
 }
 
+export function getMockDisponibilidades(): MockDisponibilidade[] {
+  return disponibilidades;
+}
+
 /**
  * Função de execução SQL simulada compatível com mysql2/promise pool.query
  */
@@ -154,6 +208,53 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
     const id = Number(params[0]);
     const found = users.find((u) => u.id === id);
     return [found ? [found] : [], {}];
+  }
+
+  // 1.1 SELECT usuarios WHERE google_id = ?
+  if (norm.includes('FROM USUARIOS') && norm.includes('WHERE GOOGLE_ID = ?')) {
+    const googleId = String(params[0]);
+    const found = users.find((u) => u.google_id === googleId);
+    return [found ? [found] : [], {}];
+  }
+
+  // 1.2 SELECT usuarios WHERE LOWER(email) = ?
+  if (norm.includes('FROM USUARIOS') && (norm.includes('LOWER(EMAIL) = ?') || norm.includes('EMAIL = ?'))) {
+    const emailTarget = String(params[0]).toLowerCase();
+    const found = users.find((u) => u.email.toLowerCase() === emailTarget);
+    return [found ? [found] : [], {}];
+  }
+
+  // 1.3 INSERT INTO usuarios
+  if (norm.startsWith('INSERT INTO USUARIOS')) {
+    const newId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
+    let novoUser: MockUser;
+    if (norm.includes('GOOGLE_ID')) {
+      const [nome, email, google_id, avatar_url, tipo] = params;
+      novoUser = {
+        id: newId,
+        nome: String(nome),
+        email: String(email).toLowerCase(),
+        google_id: String(google_id),
+        avatar_url: avatar_url ? String(avatar_url) : null,
+        telefone: '',
+        tipo: tipo || 'contratante',
+        bairro: '',
+        status: 'ativo'
+      };
+    } else {
+      const [nome, email, telefone, tipo, bairro] = params;
+      novoUser = {
+        id: newId,
+        nome: String(nome),
+        email: String(email).toLowerCase(),
+        telefone: String(telefone || ''),
+        tipo: tipo || 'contratante',
+        bairro: String(bairro || ''),
+        status: 'ativo'
+      };
+    }
+    users.push(novoUser);
+    return [{ insertId: newId, affectedRows: 1 }, {}];
   }
 
   // 2. INSERT INTO demandas
@@ -210,6 +311,34 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
     return [existing ? [existing] : [], {}];
   }
 
+  // 5.1 Conflito de agenda: checkAgendaConflict
+  if (norm.includes('FROM CANDIDATURAS') && norm.includes("STATUS = 'ACEITA'") && (norm.includes('DATA_SERVICO') || norm.includes('DATE(D.DATA_SERVICO)'))) {
+    const diaristaId = Number(params[0]);
+    const excludeDemandaId = norm.includes('DEMANDA_ID != ?') || norm.includes('D.ID != ?') ? Number(params[1]) : null;
+    const dataAlvoParam = excludeDemandaId ? params[2] : params[1];
+    const dataAlvo = String(dataAlvoParam).slice(0, 10);
+
+    const conflito = candidaturas.find((c) => {
+      if (c.diarista_id !== diaristaId || c.status !== 'aceita') return false;
+      if (excludeDemandaId && c.demanda_id === excludeDemandaId) return false;
+      const d = demandas.find((dem) => dem.id === c.demanda_id);
+      if (!d) return false;
+      const dData = String(d.data_servico).slice(0, 10);
+      return dData === dataAlvo && ['aberta', 'preenchida'].includes(d.status);
+    });
+
+    if (conflito) {
+      const d = demandas.find((dem) => dem.id === conflito.demanda_id);
+      return [[{
+        id: conflito.id,
+        demanda_id: conflito.demanda_id,
+        titulo: d?.titulo || 'Demanda',
+        data_servico: d?.data_servico || dataAlvo
+      }], {}];
+    }
+    return [[], {}];
+  }
+
   // 6. INSERT INTO candidaturas
   if (norm.startsWith('INSERT INTO CANDIDATURAS')) {
     const [demanda_id, diarista_id, mensagem] = params;
@@ -242,7 +371,7 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
     return [ativas, {}];
   }
 
-  // 9. UPDATE usuarios (anonimização / soft delete)
+  // 9. UPDATE usuarios (anonimização / soft delete / google_id)
   if (norm.startsWith('UPDATE USUARIOS')) {
     const id = Number(params[params.length - 1]);
     const u = users.find((item) => item.id === id);
@@ -252,6 +381,13 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
         u.nome = 'Conta Encerrada';
         u.email = String(params[0]);
         u.telefone = '00000000000';
+      }
+      if (norm.includes('GOOGLE_ID = ?')) {
+        u.google_id = String(params[0]);
+        if (params[1]) u.avatar_url = String(params[1]);
+      }
+      if (norm.includes('AVATAR_URL = ?') && !norm.includes('GOOGLE_ID = ?')) {
+        u.avatar_url = String(params[0]);
       }
     }
     return [{ affectedRows: 1 }, {}];
@@ -263,6 +399,31 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
     const idx = candidaturas.findIndex((c) => c.id === id);
     if (idx !== -1) {
       candidaturas.splice(idx, 1);
+      return [{ affectedRows: 1 }, {}];
+    }
+    return [{ affectedRows: 0 }, {}];
+  }
+
+  // 10.1 DELETE candidaturas concorrentes pendentes: WHERE demanda_id = ? AND id != ?
+  if (norm.startsWith('DELETE FROM CANDIDATURAS') && norm.includes('DEMANDA_ID = ?') && norm.includes('ID != ?')) {
+    const [demandaId, excId] = params.map(Number);
+    let rem = 0;
+    for (let i = candidaturas.length - 1; i >= 0; i--) {
+      if (candidaturas[i].demanda_id === demandaId && candidaturas[i].id !== excId && candidaturas[i].status === 'pendente') {
+        candidaturas.splice(i, 1);
+        rem++;
+      }
+    }
+    return [{ affectedRows: rem }, {}];
+  }
+
+  // 10.2 UPDATE candidaturas SET status = ? WHERE id = ?
+  if (norm.startsWith('UPDATE CANDIDATURAS') && norm.includes('STATUS = ?') && norm.includes('WHERE ID = ?')) {
+    const [novoStatus, idParam] = params;
+    const id = Number(idParam);
+    const cand = candidaturas.find((c) => c.id === id);
+    if (cand) {
+      cand.status = String(novoStatus);
       return [{ affectedRows: 1 }, {}];
     }
     return [{ affectedRows: 0 }, {}];
@@ -282,6 +443,8 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
       status: cand.status,
       mensagem: cand.mensagem,
       data_criacao: cand.data_criacao,
+      data_servico: d?.data_servico || '2026-10-15',
+      demanda_status: d?.status || 'aberta',
       diarista_nome: u?.nome || 'Lucas Pereira',
       diarista_email: u?.email || 'lucas.pereira@email.com',
       diarista_telefone: u?.telefone || '11955554444',
@@ -405,13 +568,13 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
     const id = Number(params[params.length - 1]);
     const d = demandas.find((item) => item.id === id);
     if (d) {
-      if (norm.includes("STATUS = 'CONCLUIDA'") || norm.includes("STATUS = ?") || norm.includes("STATUS = COALESCE(?, STATUS)")) {
-        const statusParam = params.find((p) => typeof p === 'string' && ['aberta', 'preenchida', 'concluida', 'cancelada'].includes(p));
-        if (norm.includes("STATUS = 'CONCLUIDA'")) {
-          d.status = 'concluida';
-        } else if (statusParam) {
-          d.status = statusParam;
-        }
+      const statusParam = params.find((p) => typeof p === 'string' && ['aberta', 'preenchida', 'concluida', 'cancelada'].includes(p));
+      if (norm.includes("STATUS = 'CONCLUIDA'")) {
+        d.status = 'concluida';
+      } else if (norm.includes("STATUS = 'PREENCHIDA'")) {
+        d.status = 'preenchida';
+      } else if (statusParam) {
+        d.status = statusParam;
       }
       return [{ affectedRows: 1 }, {}];
     }
@@ -472,5 +635,84 @@ export async function mockDbQuery(sql: string, params: any[] = []): Promise<[any
     return [list, {}];
   }
 
+  // 21. INSERT INTO disponibilidades
+  if (norm.startsWith('INSERT INTO DISPONIBILIDADES')) {
+    const [diarista_id, data, hora_inicio, hora_fim, status, observacao] = params;
+    const newId = ++autoIncDisponibilidade;
+    const novaDisp: MockDisponibilidade = {
+      id: newId,
+      diarista_id: Number(diarista_id),
+      data: String(data),
+      hora_inicio: String(hora_inicio).slice(0, 5),
+      hora_fim: String(hora_fim).slice(0, 5),
+      status: status || 'disponivel',
+      observacao: observacao || '',
+      data_criacao: new Date().toISOString()
+    };
+    disponibilidades.push(novaDisp);
+    return [{ insertId: newId, affectedRows: 1 }, {}];
+  }
+
+  // 22. DELETE FROM disponibilidades WHERE id = ? AND diarista_id = ?
+  if (norm.startsWith('DELETE FROM DISPONIBILIDADES') && norm.includes('WHERE ID = ? AND DIARISTA_ID = ?')) {
+    const [idParam, diaristaParam] = params.map(Number);
+    const idx = disponibilidades.findIndex((d) => d.id === idParam && d.diarista_id === diaristaParam);
+    if (idx !== -1) {
+      disponibilidades.splice(idx, 1);
+      return [{ affectedRows: 1 }, {}];
+    }
+    return [{ affectedRows: 0 }, {}];
+  }
+
+  // 23. SELECT FROM disponibilidades WHERE d.id = ?
+  if (norm.includes('FROM DISPONIBILIDADES') && (norm.includes('WHERE D.ID = ?') || norm.includes('WHERE ID = ?')) && !norm.includes('DIARISTA_ID = ?')) {
+    const id = Number(params[0]);
+    const disp = disponibilidades.find((d) => d.id === id);
+    if (!disp) return [[], {}];
+    const u = users.find((user) => user.id === disp.diarista_id);
+    return [[{
+      ...disp,
+      diarista_nome: u?.nome || 'Diarista'
+    }], {}];
+  }
+
+  // 24. SELECT FROM disponibilidades WHERE diarista_id = ?
+  if (norm.includes('FROM DISPONIBILIDADES') && norm.includes('DIARISTA_ID = ?')) {
+    const diaristaId = Number(params[0]);
+    let result = disponibilidades.filter((d) => d.diarista_id === diaristaId);
+    if (norm.includes("STATUS = 'DISPONIVEL'") || norm.includes('STATUS = ?')) {
+      const statusParam = norm.includes('STATUS = ?') ? params[params.length - 1] : 'disponivel';
+      result = result.filter((d) => d.status === statusParam);
+    }
+    return [result, {}];
+  }
+
+  // 25. SELECT usuarios u (buscarDiaristas)
+  if (norm.includes('FROM USUARIOS U') && norm.includes("U.TIPO IN ('DIARISTA', 'AMBOS')")) {
+    const diaristas = users.filter((u) => (u.tipo === 'diarista' || u.tipo === 'ambas' || u.tipo === 'ambos') && u.status === 'ativo').map((u) => {
+      const proxs = disponibilidades.filter((d) => d.diarista_id === u.id && d.status === 'disponivel');
+      return {
+        id: u.id,
+        nome: u.nome,
+        email: u.email,
+        telefone: u.telefone,
+        tipo: u.tipo,
+        bairro: u.bairro,
+        avatar_url: u.avatar_url || null,
+        foto_url: '',
+        bio: 'Profissional dedicado e com experiência em limpeza residencial e comercial.',
+        experiencia: '3 a 5 anos',
+        servicos: JSON.stringify(['Limpeza Residencial', 'Passar Roupa']),
+        regioes: `${u.bairro} e proximidades`,
+        nota_media: 5.0,
+        total_avaliacoes: 3,
+        total_concluidos: 5,
+        proximas_disponibilidades: proxs
+      };
+    });
+    return [diaristas, {}];
+  }
+
   return [[], {}];
 }
+
