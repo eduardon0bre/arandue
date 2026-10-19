@@ -108,9 +108,18 @@ export default function ModalAgendaDiarista({ diarista, isOpen, onClose }) {
   };
 
   const handleContatoHorario = (slot) => {
+    const dataFmt = dataSelecionada.split('-').reverse().join('/');
+    if (diarista?.id) {
+      api
+        .post('/notificacoes/contato-diarista', {
+          diarista_id: diarista.id,
+          horario_interesse: `${dataFmt} das ${slot.hora_inicio} às ${slot.hora_fim}`,
+          mensagem_adicional: slot.observacao || ''
+        })
+        .catch(() => {});
+    }
     if (!diarista.telefone) return;
     const cleanPhone = diarista.telefone.replace(/\D/g, '');
-    const dataFmt = dataSelecionada.split('-').reverse().join('/');
     const msg = encodeURIComponent(
       `Olá ${diarista.nome}, vi no Quadro de Diárias que você tem disponibilidade no dia ${dataFmt} das ${slot.hora_inicio} às ${slot.hora_fim}. Gostaria de combinar o serviço!`
     );

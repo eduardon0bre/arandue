@@ -323,8 +323,8 @@ const emailProvider = {
     });
 
     try {
-      // 1. Envio via Nodemailer Gmail / SMTP quando a senha de app (SMTP_PASS) estiver configurada
-      if ((provider === 'gmail' || provider === 'smtp' || provider === 'nodemailer') && smtpPass) {
+      // 1. Envio via Nodemailer Gmail / SMTP quando a senha de app (SMTP_PASS) estiver configurada (exceto na suíte Vitest)
+      if ((provider === 'gmail' || provider === 'smtp' || provider === 'nodemailer') && smtpPass && !process.env.VITEST) {
         const res = await sendNodemailerSmtp({
           from,
           to: destinatarioReal,

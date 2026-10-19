@@ -3,6 +3,7 @@ import { Phone, MessageCircle, FileText, CheckCircle2, Star, Check, XCircle } fr
 import Modal from './Modal';
 import Button from './Button';
 import LoadingSpinner from './LoadingSpinner';
+import api from '../services/api';
 
 export default function ModalCandidatosDemanda({
   isOpen = false,
@@ -120,6 +121,16 @@ export default function ModalCandidatosDemanda({
                       href={`https://wa.me/55${cand.diarista_telefone?.replace(/\D/g, '')}?text=Ol%C3%A1%20${encodeURIComponent(cand.diarista_nome)},%20sua%20candidatura%20no%20Quadro%20de%20Di%C3%A1rias%20foi%20aprovada!`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        if (cand.diarista_id) {
+                          api
+                            .post('/notificacoes/contato-diarista', {
+                              diarista_id: cand.diarista_id,
+                              vaga_titulo: demanda?.titulo || 'Diária aprovada'
+                            })
+                            .catch(() => {});
+                        }
+                      }}
                       className="btn btn-sm btn-primary"
                       style={{ backgroundColor: '#15803d', borderColor: '#15803d' }}
                     >

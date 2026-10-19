@@ -289,4 +289,54 @@ describe('Integration Tests: Sistema de Notificações Multi-Canal do Aranduê',
       expect(response.body.message).toContain('push_token é obrigatório');
     });
   });
+
+  describe('5. Notificação quando Contratante entra em Contato com Diarista', () => {
+    it('deve enviar e-mail, whatsapp e push ao diarista respeitando suas preferências quando contratante entra em contato', async () => {
+      const diarista = getMockUsers().find((u) => u.id === 2);
+      if (diarista) {
+        diarista.notif_whatsapp = true;
+        diarista.notif_email = true;
+        diarista.notif_push = true;
+      }
+
+      const response = await request(app)
+        .post('/api/notificacoes/contato-diarista')
+        .set('Authorization', `Bearer ${tokenUsuario}`)
+        .send({
+          diarista_id: 2,
+          horario_interesse: '20/10/2026 das 08:00 às 17:00',
+          vaga_titulo: 'Faxina Completa'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.canais_enviados).toContain('email');
+      expect(response.body.data.canais_enviados).toContain('whatsapp');
+      expect(response.body.data.canais_enviados).toContain('push');
+      expect(response.body.data.notificacao?.tipo).toBe('contato_contratante');
+    });
+
+    it('não deve enviar e-mail ao diarista no contato se notif_email estiver desativado nas configurações', async () => {
+      const diarista = getMockUsers().find((u) => u.id === 2);
+      if (diarista) {
+        diarista.notif_whatsapp = true;
+        diarista.notif_email = false;
+        diarista.notif_push = false;
+      }
+
+      const response = await request(app)
+        .post('/api/notificacoes/contato-diarista')
+        .set('Authorization', `Bearer ${tokenUsuario}`)
+        .send({
+          diarista_id: 2,
+          vaga_titulo: 'Diária de Cozinha'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.canais_enviados).toContain('whatsapp');
+      expect(response.body.data.canais_enviados).not.toContain('email');
+      expect(response.body.data.canais_enviados).not.toContain('push');
+    });
+  });
 });

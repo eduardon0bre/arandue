@@ -154,6 +154,70 @@ const notificacaoController = {
         message: 'Erro interno ao salvar token de notificação push.'
       });
     }
+  },
+
+  /**
+   * Dispara notificação (E-mail, WhatsApp, Push) quando um contratante entra em contato com um diarista.
+   * Respeita rigorosamente as preferências (notif_whatsapp, notif_email, notif_push) do diarista.
+   * POST /api/notificacoes/contato-diarista
+   */
+  async contatarDiarista(req, res) {
+    try {
+      const { diarista_id, contratante_nome, horario_interesse, vaga_titulo, mensagem_adicional } = req.body || {};
+
+      if (!diarista_id || isNaN(diarista_id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'O campo diarista_id é obrigatório.'
+        });
+      }
+
+      const nomeContratante =
+        req.usuario?.nome || contratante_nome || 'Um contratante da plataforma Aranduê';
+      const emailContratante = req.usuario?.email ? ` (${req.usuario.email})` : '';
+      const telefoneContratante = req.usuario?.telefone ? ` | Tel: ${req.usuario.telefone}` : '';
+
+      let detalhes = `${nomeContratante}${emailContratante}${telefoneContratante} iniciou contato com você pelo Aranduê para combinar uma diária.`;
+      if (vaga_titulo) {
+        detalhes += `\n• Vaga/Serviço: "${vaga_titulo}"`;
+      }
+      if (horario_interesse) {
+        detalhes += `\n• Data/Horário de interesse: ${horario_interesse}`;
+      }
+      if (mensagem_adicional) {
+        detalhes += `\n• Mensagem: "${mensagem_adicional}"`;
+      }
+
+      const resultado = await notificationService.dispararNotificacao({
+        usuario_id: Number(diarista_id),
+        tipo: 'contato_contratante',
+        titulo: `Novo interesse de contratação: ${nomeContratante}`,
+        mensagem: detalhes,
+        metadata: {
+          origem: 'contato_contratante',
+          contratante_id: req.usuario?.id || null,
+          contratante_nome: nomeContratante,
+          horario_interesse: horario_interesse || null,
+          vaga_titulo: vaga_titulo || null
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          canais_enviados: resultado.canais_enviados,
+          resultados: resultado.resultados,
+          notificacao: resultado.notificacao
+        },
+        message: 'Notificação de contato enviada ao diarista conforme as preferências configuradas.'
+      });
+    } catch (error) {
+      console.error('Erro ao notificar contato com diarista:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno ao processar notificação de contato.'
+      });
+    }
   }
 };
 

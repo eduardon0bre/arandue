@@ -57,6 +57,7 @@ export default function NotificationBell() {
   const [marcandoTodas, setMarcandoTodas] = useState(false);
 
   const containerRef = useRef(null);
+  const ultimoIdVistoRef = useRef(null);
 
   // Busca notificações e contagem no backend
   const carregarNotificacoes = useCallback(async (silencioso = false) => {
@@ -65,8 +66,12 @@ export default function NotificationBell() {
       const response = await api.get('/notificacoes?limit=30');
       if (response.data?.success && response.data?.data) {
         const { notificacoes: lista, total_nao_lidas } = response.data.data;
-        setNotificacoes(Array.isArray(lista) ? lista : []);
+        const arr = Array.isArray(lista) ? lista : [];
+        setNotificacoes(arr);
         setTotalNaoLidas(typeof total_nao_lidas === 'number' ? total_nao_lidas : 0);
+        if (arr.length > 0 && arr[0].id) {
+          ultimoIdVistoRef.current = Math.max(ultimoIdVistoRef.current || 0, arr[0].id);
+        }
       }
     } catch (err) {
       // Ignora falhas de rede silenciosamente para não quebrar a navegação
@@ -76,23 +81,61 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Carrega ao montar o componente
+  // Carrega ao montar o componente e monitora em tempo real enquanto a página estiver aberta
   useEffect(() => {
     let cancelado = false;
-    api
-      .get('/notificacoes?limit=30')
-      .then((response) => {
-        if (!cancelado && response.data?.success && response.data?.data) {
-          const { notificacoes: lista, total_nao_lidas } = response.data.data;
-          setNotificacoes(Array.isArray(lista) ? lista : []);
-          setTotalNaoLidas(typeof total_nao_lidas === 'number' ? total_nao_lidas : 0);
-        }
-      })
-      .catch((err) => {
-        console.warn('Não foi possível carregar notificações:', err.message);
-      });
+
+    if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === 'default') {
+      window.Notification.requestPermission().catch(() => {});
+    }
+
+    const consultar = () => {
+      api
+        .get('/notificacoes?limit=30')
+        .then((response) => {
+          if (!cancelado && response.data?.success && response.data?.data) {
+            const { notificacoes: lista, total_nao_lidas } = response.data.data;
+            const arr = Array.isArray(lista) ? lista : [];
+            setNotificacoes(arr);
+            setTotalNaoLidas(typeof total_nao_lidas === 'number' ? total_nao_lidas : 0);
+
+            if (arr.length > 0) {
+              const maisRecente = arr[0];
+              if (
+                ultimoIdVistoRef.current !== null &&
+                maisRecente.id > ultimoIdVistoRef.current &&
+                !maisRecente.lida
+              ) {
+                const canais = parseCanais(maisRecente.canais_enviados);
+                if (
+                  canais.includes('push') &&
+                  typeof window !== 'undefined' &&
+                  'Notification' in window &&
+                  window.Notification.permission === 'granted'
+                ) {
+                  try {
+                    new window.Notification(maisRecente.titulo || 'Nova notificação — Aranduê', {
+                      body: maisRecente.mensagem || '',
+                      icon: '/favicon.svg'
+                    });
+                  } catch {}
+                }
+              }
+              ultimoIdVistoRef.current = Math.max(ultimoIdVistoRef.current || 0, maisRecente.id);
+            } else if (ultimoIdVistoRef.current === null) {
+              ultimoIdVistoRef.current = 0;
+            }
+          }
+        })
+        .catch(() => {});
+    };
+
+    consultar();
+    const intervalo = setInterval(consultar, 8000);
+
     return () => {
       cancelado = true;
+      clearInterval(intervalo);
     };
   }, []);
 
